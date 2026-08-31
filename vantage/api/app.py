@@ -59,6 +59,13 @@ def create_app() -> FastAPI:
             "database_url": settings.database_url.split("://")[0],
         }
 
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+
+    frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    if frontend_dist.exists():
+        app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+
     return app
 
 
