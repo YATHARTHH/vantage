@@ -1,0 +1,305 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "Total Agent Cost (USD)",
+      "type": "stat",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "vantage-infinity"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "vantage-infinity"
+          },
+          "type": "json",
+          "source": "url",
+          "url": "http://host.docker.internal:8000/api/v1/query/agent-cost?project_id=search-v2",
+          "url_options": {
+            "method": "GET"
+          },
+          "parser": "backend",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "total_cost_usd",
+              "text": "total_cost_usd",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["sum"],
+          "fields": ""
+        },
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.2 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "id": 2,
+      "title": "Total Tokens Processed",
+      "type": "stat",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "vantage-infinity"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "vantage-infinity"
+          },
+          "type": "json",
+          "source": "url",
+          "url": "http://host.docker.internal:8000/api/v1/query/agent-cost?project_id=search-v2",
+          "url_options": {
+            "method": "GET"
+          },
+          "parser": "backend",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "tokens_input",
+              "text": "tokens_input",
+              "type": "number"
+            },
+            {
+              "selector": "tokens_output",
+              "text": "tokens_output",
+              "type": "number"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["sum"],
+          "fields": ""
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 3,
+      "title": "Active Agent Projects",
+      "type": "stat",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "vantage-infinity"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "vantage-infinity"
+          },
+          "type": "json",
+          "source": "url",
+          "url": "http://host.docker.internal:8000/api/v1/projects",
+          "url_options": {
+            "method": "GET"
+          },
+          "parser": "backend",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "id",
+              "text": "id",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["count"],
+          "fields": ""
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 4,
+      "title": "Agent Execution Spans & LLM Cost Breakdown",
+      "type": "table",
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "vantage-infinity"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "vantage-infinity"
+          },
+          "type": "json",
+          "source": "url",
+          "url": "http://host.docker.internal:8000/api/v1/query/agent-cost?project_id=search-v2",
+          "url_options": {
+            "method": "GET"
+          },
+          "parser": "backend",
+          "format": "table",
+          "root_selector": "",
+          "columns": [
+            {
+              "selector": "trace_id",
+              "text": "Trace ID",
+              "type": "string"
+            },
+            {
+              "selector": "agent_name",
+              "text": "Agent Name",
+              "type": "string"
+            },
+            {
+              "selector": "llm_call_count",
+              "text": "LLM Calls",
+              "type": "number"
+            },
+            {
+              "selector": "tokens_input",
+              "text": "Input Tokens",
+              "type": "number"
+            },
+            {
+              "selector": "tokens_output",
+              "text": "Output Tokens",
+              "type": "number"
+            },
+            {
+              "selector": "total_cost_usd",
+              "text": "Total Cost (USD)",
+              "type": "number"
+            },
+            {
+              "selector": "status",
+              "text": "Status",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Total Cost (USD)" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["vantage", "ai", "llm"],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m"]
+  },
+  "title": "Vantage AI Observability Overview",
+  "uid": "vantage-ai-overview"
+}
