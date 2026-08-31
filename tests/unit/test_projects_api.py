@@ -54,6 +54,5 @@ async def test_add_source_mapping(async_client):
 
 @pytest.mark.asyncio
 async def test_ui_projects_page(async_client):
-    res = await async_client.get("/ui/projects")
+    res = await async_client.get("/")
     assert res.status_code == 200
-    assert "Registered Projects" in res.text

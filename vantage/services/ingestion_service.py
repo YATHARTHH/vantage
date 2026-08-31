@@ -31,16 +31,20 @@ class IngestionService:
 
     async def ingest(self, envelope: TelemetryEnvelope) -> str | None:
         source_id = (
-            envelope.span.source_trace_id
-            or envelope.span.trace_id
-            or envelope.external_event_id
-            or "unknown"
+            envelope.project_id
+            if envelope.project_id and envelope.project_id != "__unmapped__"
+            else (
+                envelope.span.source_trace_id
+                or envelope.span.trace_id
+                or envelope.external_event_id
+                or "unknown"
+            )
         )
         resolved_project_id = await self._mapper.resolve_project_id(
             envelope.source_tool.value, source_id
         )
 
-        if resolved_project_id and envelope.project_id == "__unmapped__":
+        if resolved_project_id:
             envelope = envelope.model_copy(update={"project_id": resolved_project_id})
 
         envelope = await self._pii.apply(envelope)

@@ -43,8 +43,7 @@ CREATE TABLE IF NOT EXISTS telemetry_spans (
 
 -- Deduplication index on (source_tool, external_event_id)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_dedup_external
-    ON telemetry_spans (source_tool, external_event_id)
-    WHERE external_event_id IS NOT NULL;
+    ON telemetry_spans (source_tool, external_event_id);
 
 CREATE INDEX IF NOT EXISTS idx_spans_project_time ON telemetry_spans (project_id, started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_spans_trace        ON telemetry_spans (trace_id, span_id);

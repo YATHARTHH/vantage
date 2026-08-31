@@ -7,6 +7,8 @@ from vantage.domain.events import (
     EventStatus,
     LLMCallData,
     UnclassifiedData,
+)
+from vantage.domain.alerts import (
     AlertRecord,
     DetectorType,
     AlertSeverity,

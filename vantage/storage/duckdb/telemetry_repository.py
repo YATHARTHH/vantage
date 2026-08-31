@@ -104,7 +104,13 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
             res = await asyncio.to_thread(
                 conn.execute,
                 """
-                INSERT INTO telemetry_spans VALUES (
+                INSERT INTO telemetry_spans (
+                    event_id, project_id, source_tool, trace_id, span_id, parent_span_id,
+                    source_trace_id, source_span_id, external_event_id, event_kind,
+                    started_at, ended_at, duration_ms, status, error_message, error_type,
+                    model_name, model_provider, tokens_input, tokens_output, cost_usd,
+                    repo_name, branch, commit_sha, pipeline_name, environment, owner_team, tags
+                ) VALUES (
                     ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
                 )
                 ON CONFLICT (source_tool, external_event_id)
