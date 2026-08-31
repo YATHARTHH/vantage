@@ -5,10 +5,18 @@ vantage.egg-info/SOURCES.txt
 vantage.egg-info/dependency_links.txt
 vantage.egg-info/requires.txt
 vantage.egg-info/top_level.txt
+vantage/anomaly/__init__.py
+vantage/anomaly/base.py
+vantage/anomaly/error_rate.py
+vantage/anomaly/rate_change.py
+vantage/anomaly/threshold.py
+vantage/anomaly/volume.py
+vantage/anomaly/zscore.py
 vantage/api/__init__.py
 vantage/api/app.py
 vantage/api/dependencies.py
 vantage/api/v1/__init__.py
+vantage/api/v1/alerts.py
 vantage/api/v1/ingest.py
 vantage/api/v1/projects.py
 vantage/api/v1/router.py
@@ -30,7 +38,10 @@ vantage/enrichment/cost_enricher.py
 vantage/enrichment/pii_filter.py
 vantage/enrichment/project_mapper.py
 vantage/services/__init__.py
+vantage/services/anomaly_service.py
 vantage/services/ingestion_service.py
+vantage/services/notification_service.py
+vantage/services/query_service.py
 vantage/storage/__init__.py
 vantage/storage/base.py
 vantage/storage/clickhouse/__init__.py
@@ -45,3 +56,4 @@ vantage/ui/__init__.py
 vantage/ui/experiments.py
 vantage/ui/projects.py
 vantage/ui/router.py
+vantage/workers/scheduler.py

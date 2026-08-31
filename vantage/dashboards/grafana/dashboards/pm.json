@@ -1,0 +1,19 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Project Health & Deployment Frequency",
+      "type": "stat",
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "Vantage API" }
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["vantage", "pm"],
+  "title": "Vantage — Product Manager Dashboard",
+  "uid": "vantage-pm"
+}
