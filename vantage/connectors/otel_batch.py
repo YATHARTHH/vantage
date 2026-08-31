@@ -135,7 +135,7 @@ class OTLPBatchConnector(AbstractConnector):
 
         return TelemetryEnvelope(
             external_event_id=ext_event_id,
-            project_id="__unmapped__",
+            project_id=source_identifier,
             source_tool=source_tool,
             span=identity,
             started_at=started_at,

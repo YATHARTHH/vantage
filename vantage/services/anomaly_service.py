@@ -42,7 +42,7 @@ class AnomalyService:
         self._metadata = metadata_repo
         self._notifier = notifier
 
-    async def run_detection_cycle((self) -> int:
+    async def run_detection_cycle(self) -> int:
         projects = await self._telemetry.list_active_project_ids()
         alerts_fired = 0
 

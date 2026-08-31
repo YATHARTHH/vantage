@@ -6,7 +6,7 @@ datasources:
     access: proxy
     isDefault: true
     jsonData:
-      baseURL: "http://vantage:8000/api/v1/query"
+      baseURL: "http://host.docker.internal:8000/api/v1/query"
       auth_type: "headers"
       httpHeaderName1: "X-API-Key"
     secureJsonData:
