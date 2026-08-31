@@ -19,6 +19,8 @@ vantage/api/v1/__init__.py
 vantage/api/v1/alerts.py
 vantage/api/v1/ingest.py
 vantage/api/v1/projects.py
+vantage/api/v1/query.py
+vantage/api/v1/registry.py
 vantage/api/v1/router.py
 vantage/connectors/custom_run.py
 vantage/connectors/github.py
@@ -42,6 +44,7 @@ vantage/services/anomaly_service.py
 vantage/services/ingestion_service.py
 vantage/services/notification_service.py
 vantage/services/query_service.py
+vantage/services/registry_service.py
 vantage/storage/__init__.py
 vantage/storage/base.py
 vantage/storage/clickhouse/__init__.py
