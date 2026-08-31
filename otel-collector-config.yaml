@@ -1,0 +1,42 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+
+  batch:
+    timeout: 5s
+    send_batch_size: 100
+
+exporters:
+  otlp_http/vantage:
+    endpoint: "http://vantage:8000/api/v1/ingest/otel-batch"
+    encoding: json          # OTLP/HTTP JSON
+    headers:
+      X-API-Key: "dev-local-key"
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 30s
+      max_elapsed_time: 120s
+
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers:  [otlp]
+      processors: [memory_limiter, batch]
+      exporters:  [otlp_http/vantage, debug]
+    metrics:
+      receivers:  [otlp]
+      processors: [memory_limiter, batch]
+      exporters:  [debug]

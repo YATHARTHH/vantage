@@ -37,6 +37,9 @@ dev = [
     "faker>=25.0.0",
 ]
 
+[tool.setuptools.packages.find]
+include = ["vantage*"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100

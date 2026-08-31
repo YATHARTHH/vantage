@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+
+  vantage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+      - ./vantage/api/templates:/app/vantage/api/templates
+    environment:
+      OLAP_BACKEND: duckdb
+      DUCKDB_PATH: /app/data/vantage.duckdb
+      DATABASE_URL: sqlite+aiosqlite:////app/data/registry.db
+      LOG_FORMAT: console
+      DEBUG: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # OTel Collector — transport layer ONLY (no enrichment)
+  # Pinned to 0.115.0
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    depends_on:
+      vantage:
+        condition: service_healthy
+
+  # Grafana OSS — pinned to 11.4.0 with Infinity plugin
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./vantage/dashboards/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: vantage-local
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_INSTALL_PLUGINS: yesoreyeram-infinity-datasource
+    depends_on:
+      - vantage
+
+volumes:
+  grafana_data:
