@@ -46,11 +46,12 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./vantage/dashboards/grafana/provisioning:/etc/grafana/provisioning
+      - ./vantage/dashboards/grafana/plugins:/var/lib/grafana/plugins
     environment:
       GF_SECURITY_ADMIN_PASSWORD: vantage-local
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-      GF_INSTALL_PLUGINS: yesoreyeram-infinity-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: yesoreyeram-infinity-datasource
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
