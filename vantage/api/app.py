@@ -6,6 +6,8 @@ from vantage.ui.router import ui_router
 from vantage.core.config import get_settings
 from vantage.core.logging import get_logger, setup_logging
 
+from vantage.storage.sqlalchemy.session import init_db
+
 logger = get_logger(__name__)
 
 
@@ -13,6 +15,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("application_startup", name="Vantage")
+    await init_db()
     yield
     logger.info("application_shutdown", name="Vantage")
 

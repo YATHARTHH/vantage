@@ -17,6 +17,7 @@ async def experiments_list_ui(
 ):
     experiments = await repo.list_experiments()
     return templates.TemplateResponse(
-        "experiments/list.html",
-        {"request": request, "experiments": [e.model_dump() for e in experiments]},
+        request=request,
+        name="experiments/list.html",
+        context={"experiments": [e.model_dump() for e in experiments]},
     )
