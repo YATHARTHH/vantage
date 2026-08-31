@@ -13,5 +13,7 @@ datasources:
       allowedHosts:
         - "http://host.docker.internal:8000"
         - "http://host.docker.internal:8000/api/v1"
+        - "http://host.docker.internal:8000/api/v1/query/agent-cost"
+        - "http://host.docker.internal:8000/api/v1/projects"
     secureJsonData:
       httpHeaderValue1: "dev-local-key"
