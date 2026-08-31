@@ -29,6 +29,7 @@ vantage/connectors/otel_batch.py
 vantage/core/__init__.py
 vantage/core/config.py
 vantage/core/exceptions.py
+vantage/core/logging.py
 vantage/core/security.py
 vantage/domain/__init__.py
 vantage/domain/alerts.py
