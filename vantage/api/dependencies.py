@@ -11,7 +11,7 @@ from vantage.storage.duckdb.telemetry_repository import DuckDBTelemetryRepositor
 from vantage.storage.sqlalchemy.metadata_repository import SQLiteMetadataRepository
 from vantage.storage.sqlalchemy.session import get_session_factory
 
-require_api_key = Depends(verify_api_key)
+require_api_key = verify_api_key
 
 
 @lru_cache
