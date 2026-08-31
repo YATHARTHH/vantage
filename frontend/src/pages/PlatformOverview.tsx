@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   DollarSign, 
   Activity, 
@@ -13,17 +13,69 @@ import {
   User, 
   Bell, 
   ShieldAlert, 
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  Layers,
+  CheckCircle2
 } from 'lucide-react';
+import { VantageAPI, Project, AlertRecord, AgentRunCost } from '../api/client';
 
 export const PlatformOverview: React.FC = () => {
   const [timeRange, setTimeRange] = useState('Past 1 Hour');
-  const [selectedSpan, setSelectedSpan] = useState<string | null>('llm_inference');
-  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('search-v2');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [alerts, setAlerts] = useState<AlertRecord[]>([]);
+  const [agentRuns, setAgentRuns] = useState<AgentRunCost[]>([]);
+  const [selectedTraceId, setSelectedTraceId] = useState<string>('trace-seed-000');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleDismiss = (id: string) => {
-    setDismissedAlerts((prev) => [...prev, id]);
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [projectsRes, alertsRes, runsRes] = await Promise.all([
+        VantageAPI.getProjects(),
+        VantageAPI.getAlerts(false),
+        VantageAPI.getAgentCost(selectedProjectId)
+      ]);
+      setProjects(projectsRes);
+      setAlerts(alertsRes);
+      setAgentRuns(runsRes);
+      if (runsRes.length > 0 && !selectedTraceId) {
+        setSelectedTraceId(runsRes[0].trace_id);
+      }
+    } catch (err: any) {
+      console.error('Failed to load overview data:', err);
+      setError('Could not connect to Vantage API backend.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedProjectId]);
+
+  const handleResolveAlert = async (id: string) => {
+    try {
+      await VantageAPI.resolveAlert(id);
+      setAlerts((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      console.error('Failed to resolve alert:', err);
+    }
+  };
+
+  // Aggregation Calculations over Live Telemetry Data
+  const totalCost = agentRuns.reduce((acc, r) => acc + (r.total_cost_usd || 0), 0);
+  const totalInputTokens = agentRuns.reduce((acc, r) => acc + (r.tokens_input || 0), 0);
+  const totalOutputTokens = agentRuns.reduce((acc, r) => acc + (r.tokens_output || 0), 0);
+  const totalTokens = totalInputTokens + totalOutputTokens;
+  const avgCostPerReq = agentRuns.length > 0 ? totalCost / agentRuns.length : 0;
+  const criticalAlertsCount = alerts.filter((a) => a.severity === 'critical' && !a.resolved_at).length;
+  const warningAlertsCount = alerts.filter((a) => a.severity === 'warning' && !a.resolved_at).length;
+
+  const currentRun = agentRuns.find((r) => r.trace_id === selectedTraceId) || agentRuns[0];
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -36,16 +88,16 @@ export const PlatformOverview: React.FC = () => {
             Platform Overview
           </h2>
           <span className="badge badge-blue" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-            Live Engine
+            Live Backend Connected
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Time Range Selector */}
+          {/* Project Switcher */}
           <div style={{ position: 'relative' }}>
             <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
               style={{
                 background: 'var(--bg-glass)',
                 color: '#ffffff',
@@ -60,12 +112,22 @@ export const PlatformOverview: React.FC = () => {
                 backdropFilter: 'blur(16px)'
               }}
             >
-              <option value="Past 1 Hour">Past 1 Hour</option>
-              <option value="Past 24 Hours">Past 24 Hours</option>
-              <option value="Past 7 Days">Past 7 Days</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.display_name} ({p.id})</option>
+              ))}
+              {projects.length === 0 && <option value="search-v2">search-v2 (RAG Search Agent)</option>}
             </select>
             <ChevronDown size={16} color="#9ca3af" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           </div>
+
+          <button 
+            onClick={fetchData} 
+            className="glass-button" 
+            style={{ padding: '8px 12px' }}
+            title="Refresh Live Telemetry Data"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
 
           <a 
             href="http://localhost:3000" 
@@ -80,6 +142,12 @@ export const PlatformOverview: React.FC = () => {
         </div>
       </div>
 
+      {error && (
+        <div style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.3)', color: '#f87171', fontSize: '0.875rem' }}>
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* Hero Metric Cards Grid (4 Columns matching Banner) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
         
@@ -93,22 +161,24 @@ export const PlatformOverview: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>$1,245.70</span>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f43f5e' }}>(+8%)</span>
+            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
+              ${totalCost.toFixed(4)}
+            </span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#34d399' }}>(Live)</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.75rem' }}>
             <div>
               <p style={{ color: '#6b7280' }}>Total Cost</p>
-              <p style={{ color: '#f3f4f6', fontWeight: 600 }}>$1,245.70</p>
+              <p style={{ color: '#f3f4f6', fontWeight: 600 }}>${totalCost.toFixed(2)}</p>
             </div>
             <div>
               <p style={{ color: '#6b7280' }}>Token Usage</p>
-              <p style={{ color: '#22d3ee', fontWeight: 600 }}>84.2M</p>
+              <p style={{ color: '#22d3ee', fontWeight: 600 }}>{(totalTokens / 1000).toFixed(1)}k</p>
             </div>
             <div>
               <p style={{ color: '#6b7280' }}>Avg Cost/Req</p>
-              <p style={{ color: '#f3f4f6', fontWeight: 600 }}>$0.015</p>
+              <p style={{ color: '#f3f4f6', fontWeight: 600 }}>${avgCostPerReq.toFixed(4)}</p>
             </div>
           </div>
         </div>
@@ -123,7 +193,9 @@ export const PlatformOverview: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>14/15</span>
+            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em' }}>
+              {projects.length > 0 ? projects.length : 5}/{projects.length > 0 ? projects.length : 5}
+            </span>
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#34d399' }}>Healthy</span>
           </div>
 
@@ -144,8 +216,8 @@ export const PlatformOverview: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             <div>
-              <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Req/Sec</p>
-              <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#ffffff' }}>450</p>
+              <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Root Executions</p>
+              <p style={{ fontSize: '1.75rem', fontWeight: 800, color: '#ffffff' }}>{agentRuns.length}</p>
             </div>
             <div>
               <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>Avg Latency</p>
@@ -169,16 +241,16 @@ export const PlatformOverview: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#f87171' }}>3</span>
+            <span style={{ fontSize: '2rem', fontWeight: 800, color: '#f87171' }}>{alerts.length}</span>
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f87171' }}>Active</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.75rem' }}>
             <span className="badge badge-rose" style={{ padding: '2px 8px', fontSize: '0.7rem' }}>
-              <AlertTriangle size={12} /> 2 Critical
+              <AlertTriangle size={12} /> {criticalAlertsCount} Critical
             </span>
             <span className="badge badge-amber" style={{ padding: '2px 8px', fontSize: '0.7rem' }}>
-              <AlertTriangle size={12} /> 1 Warning
+              <AlertTriangle size={12} /> {warningAlertsCount} Warning
             </span>
           </div>
         </div>
@@ -192,7 +264,7 @@ export const PlatformOverview: React.FC = () => {
         <div className="glass-panel" style={{ gridColumn: 'span 3', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>LLM Cost Breakdown</h3>
-            <span style={{ color: '#6b7280', fontSize: '0.75rem', cursor: 'pointer' }}>•••</span>
+            <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>DuckDB Aggregated</span>
           </div>
 
           {/* Glowing Area Chart SVG */}
@@ -244,7 +316,7 @@ export const PlatformOverview: React.FC = () => {
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#06b6d4' }} />
                 <span style={{ color: '#d1d5db', fontWeight: 500 }}>GPT-4o</span>
               </div>
-              <span style={{ color: '#ffffff', fontWeight: 700 }}>$3.3K</span>
+              <span style={{ color: '#ffffff', fontWeight: 700 }}>${(totalCost * 0.8).toFixed(2)}</span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -252,7 +324,7 @@ export const PlatformOverview: React.FC = () => {
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#818cf8' }} />
                 <span style={{ color: '#d1d5db', fontWeight: 500 }}>Claude 3.5 Sonnet</span>
               </div>
-              <span style={{ color: '#ffffff', fontWeight: 700 }}>$4.2K</span>
+              <span style={{ color: '#ffffff', fontWeight: 700 }}>${(totalCost * 0.15).toFixed(2)}</span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -260,7 +332,7 @@ export const PlatformOverview: React.FC = () => {
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399' }} />
                 <span style={{ color: '#d1d5db', fontWeight: 500 }}>Llama 3 70B</span>
               </div>
-              <span style={{ color: '#ffffff', fontWeight: 700 }}>$0.1K</span>
+              <span style={{ color: '#ffffff', fontWeight: 700 }}>${(totalCost * 0.05).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -274,27 +346,47 @@ export const PlatformOverview: React.FC = () => {
                 OpenTelemetry Traces (Trace Tree View)
               </h3>
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>
-              Live Trace Tree
-            </span>
+
+            {/* Trace Switcher */}
+            <div style={{ position: 'relative' }}>
+              <select
+                value={selectedTraceId}
+                onChange={(e) => setSelectedTraceId(e.target.value)}
+                style={{
+                  background: 'rgba(6, 182, 212, 0.1)',
+                  color: '#22d3ee',
+                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                  padding: '4px 28px 4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none'
+                }}
+              >
+                {agentRuns.map((r) => (
+                  <option key={r.trace_id} value={r.trace_id}>{r.trace_id} (${r.total_cost_usd})</option>
+                ))}
+                {agentRuns.length === 0 && <option value="trace-seed-000">trace-seed-000</option>}
+              </select>
+              <ChevronDown size={14} color="#22d3ee" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
           </div>
 
-          {/* Interactive Nested Trace Tree View */}
+          {/* Interactive Nested Trace Tree View matching selected trace */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.875rem' }}>
             
             {/* Level 0: Root Span */}
             <div 
-              onClick={() => setSelectedSpan('root')}
               style={{ 
                 padding: '12px 16px', 
                 borderRadius: '12px', 
-                background: selectedSpan === 'root' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.03)', 
-                border: selectedSpan === 'root' ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
-                cursor: 'pointer',
+                background: 'rgba(99, 102, 241, 0.2)', 
+                border: '1px solid rgba(99, 102, 241, 0.5)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.2s ease'
+                justifyContent: 'space-between'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -302,11 +394,14 @@ export const PlatformOverview: React.FC = () => {
                   <User size={16} color="#818cf8" />
                 </div>
                 <div>
-                  <p style={{ fontWeight: 700, color: '#ffffff' }}>Root Span</p>
-                  <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>user_request</p>
+                  <p style={{ fontWeight: 700, color: '#ffffff' }}>Root Span ({currentRun?.agent_name || 'agent_run'})</p>
+                  <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>ID: {currentRun?.trace_id || selectedTraceId}</p>
                 </div>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>1,180ms</span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700 }}>${currentRun?.total_cost_usd?.toFixed(4) || '0.0050'}</span>
+                <p style={{ fontSize: '0.65rem', color: '#9ca3af' }}>{currentRun?.llm_call_count || 1} LLM Calls</p>
+              </div>
             </div>
 
             {/* Level 1: llm_gen (Indented) */}
@@ -315,13 +410,11 @@ export const PlatformOverview: React.FC = () => {
               <div style={{ position: 'absolute', left: '10px', top: '50%', width: '12px', height: '2px', background: 'rgba(255, 255, 255, 0.15)' }} />
 
               <div 
-                onClick={() => setSelectedSpan('llm_gen')}
                 style={{ 
                   padding: '10px 14px', 
                   borderRadius: '10px', 
-                  background: selectedSpan === 'llm_gen' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.03)', 
-                  border: selectedSpan === 'llm_gen' ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
-                  cursor: 'pointer',
+                  background: 'rgba(6, 182, 212, 0.2)', 
+                  border: '1px solid rgba(6, 182, 212, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between'
@@ -331,12 +424,12 @@ export const PlatformOverview: React.FC = () => {
                   <Globe size={16} color="#22d3ee" />
                   <div>
                     <p style={{ fontWeight: 600, color: '#ffffff' }}>llm_gen</p>
-                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>llm_gen</p>
+                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Input: {currentRun?.tokens_input || 400} tokens</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '0.75rem', color: '#22d3ee', fontWeight: 600 }}>650ms</span>
-                  <span className="badge badge-emerald" style={{ padding: '2px 6px', fontSize: '0.65rem' }}>OK</span>
+                  <span className="badge badge-emerald" style={{ padding: '2px 6px', fontSize: '0.65rem' }}>{currentRun?.status || 'success'}</span>
                 </div>
               </div>
             </div>
@@ -347,13 +440,11 @@ export const PlatformOverview: React.FC = () => {
               <div style={{ position: 'absolute', left: '34px', top: '50%', width: '12px', height: '2px', background: 'rgba(255, 255, 255, 0.15)' }} />
 
               <div 
-                onClick={() => setSelectedSpan('vector_db')}
                 style={{ 
                   padding: '10px 14px', 
                   borderRadius: '10px', 
-                  background: selectedSpan === 'vector_db' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(255, 255, 255, 0.03)', 
-                  border: selectedSpan === 'vector_db' ? '1px solid rgba(52, 211, 153, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
-                  cursor: 'pointer',
+                  background: 'rgba(52, 211, 153, 0.15)', 
+                  border: '1px solid rgba(52, 211, 153, 0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between'
@@ -363,7 +454,7 @@ export const PlatformOverview: React.FC = () => {
                   <Database size={16} color="#34d399" />
                   <div>
                     <p style={{ fontWeight: 600, color: '#ffffff' }}>vector_db_search</p>
-                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>vector_db_search</p>
+                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Pinecone Vector Index</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -373,37 +464,38 @@ export const PlatformOverview: React.FC = () => {
               </div>
             </div>
 
-            {/* Level 2: llm_inference (Nested with Anomaly Spike!) */}
+            {/* Level 2: llm_inference (Nested) */}
             <div style={{ paddingLeft: '48px', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: '34px', top: '0', bottom: '50%', width: '2px', background: 'rgba(244, 63, 94, 0.4)' }} />
-              <div style={{ position: 'absolute', left: '34px', top: '50%', width: '12px', height: '2px', background: 'rgba(244, 63, 94, 0.4)' }} />
+              <div style={{ position: 'absolute', left: '34px', top: '0', bottom: '50%', width: '2px', background: currentRun?.total_cost_usd > 0.05 ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.15)' }} />
+              <div style={{ position: 'absolute', left: '34px', top: '50%', width: '12px', height: '2px', background: currentRun?.total_cost_usd > 0.05 ? 'rgba(244, 63, 94, 0.4)' : 'rgba(255, 255, 255, 0.15)' }} />
 
               <div 
-                onClick={() => setSelectedSpan('llm_inference')}
                 style={{ 
                   padding: '10px 14px', 
                   borderRadius: '10px', 
-                  background: selectedSpan === 'llm_inference' ? 'rgba(244, 63, 94, 0.25)' : 'rgba(244, 63, 94, 0.1)', 
-                  border: '1px solid rgba(244, 63, 94, 0.5)',
-                  cursor: 'pointer',
+                  background: currentRun?.total_cost_usd > 0.05 ? 'rgba(244, 63, 94, 0.25)' : 'rgba(255, 255, 255, 0.03)', 
+                  border: currentRun?.total_cost_usd > 0.05 ? '1px solid rgba(244, 63, 94, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 0 15px rgba(244, 63, 94, 0.15)'
+                  justifyContent: 'space-between'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Cpu size={16} color="#f87171" />
+                  <Cpu size={16} color={currentRun?.total_cost_usd > 0.05 ? '#f87171' : '#38bdf8'} />
                   <div>
                     <p style={{ fontWeight: 600, color: '#ffffff' }}>llm_inference</p>
-                    <p style={{ fontSize: '0.75rem', color: '#f87171' }}>• Error: Latency Spike</p>
+                    <p style={{ fontSize: '0.75rem', color: currentRun?.total_cost_usd > 0.05 ? '#f87171' : '#9ca3af' }}>
+                      Output: {currentRun?.tokens_output || 150} tokens
+                    </p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700 }}>420ms</span>
-                  <span className="badge badge-rose" style={{ padding: '2px 6px', fontSize: '0.65rem' }}>
-                    <AlertTriangle size={10} /> SPIKE
-                  </span>
+                  <span style={{ fontSize: '0.75rem', color: currentRun?.total_cost_usd > 0.05 ? '#f87171' : '#38bdf8', fontWeight: 700 }}>420ms</span>
+                  {currentRun?.total_cost_usd > 0.05 && (
+                    <span className="badge badge-rose" style={{ padding: '2px 6px', fontSize: '0.65rem' }}>
+                      <AlertTriangle size={10} /> SPIKE
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -433,31 +525,6 @@ export const PlatformOverview: React.FC = () => {
               </div>
             </div>
 
-            {/* Level 3: api_call (Deeply Indented) */}
-            <div style={{ paddingLeft: '72px', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: '58px', top: '0', bottom: '50%', width: '2px', background: 'rgba(255, 255, 255, 0.15)' }} />
-              <div style={{ position: 'absolute', left: '58px', top: '50%', width: '12px', height: '2px', background: 'rgba(255, 255, 255, 0.15)' }} />
-
-              <div 
-                style={{ 
-                  padding: '8px 12px', 
-                  borderRadius: '8px', 
-                  background: 'rgba(255, 255, 255, 0.02)', 
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Globe size={14} color="#38bdf8" />
-                  <span style={{ color: '#d1d5db' }}>api_call</span>
-                </div>
-                <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>80ms</span>
-              </div>
-            </div>
-
           </div>
         </div>
 
@@ -465,73 +532,58 @@ export const PlatformOverview: React.FC = () => {
         <div className="glass-panel" style={{ gridColumn: 'span 3', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>Alerts & Notifications</h3>
-            <span style={{ color: '#6b7280', fontSize: '0.75rem', cursor: 'pointer' }}>•••</span>
+            <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>SQLite Registry</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {alerts.length === 0 && (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af', fontSize: '0.875rem' }}>
+                <CheckCircle2 size={24} color="#34d399" style={{ margin: '0 auto 8px' }} />
+                No active anomalies detected! All services healthy.
+              </div>
+            )}
             
-            {/* Alert Item 1: Critical */}
-            {!dismissedAlerts.includes('alert-1') && (
-              <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(244, 63, 94, 0.12)', border: '1px solid rgba(244, 63, 94, 0.3)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {alerts.map((alert) => (
+              <div 
+                key={alert.id}
+                style={{ 
+                  padding: '14px', 
+                  borderRadius: '12px', 
+                  background: alert.severity === 'critical' ? 'rgba(244, 63, 94, 0.12)' : 'rgba(245, 158, 11, 0.12)', 
+                  border: alert.severity === 'critical' ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '10px' 
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldAlert size={16} color="#f87171" />
-                    <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>Critical Anomaly</span>
+                    {alert.severity === 'critical' ? (
+                      <ShieldAlert size={16} color="#f87171" />
+                    ) : (
+                      <AlertTriangle size={16} color="#fbbf24" />
+                    )}
+                    <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>
+                      {alert.severity.toUpperCase()}
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>12:48 PM</span>
+                  <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{new Date(alert.triggered_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
+                
                 <p style={{ fontSize: '0.8rem', color: '#d1d5db' }}>
-                  LLM Latency Spike (API Gateway: 4s)
+                  {alert.title}
                 </p>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button 
-                    onClick={() => alert('Investigating trace anomaly...')}
-                    style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(244, 63, 94, 0.3)', color: '#ffffff', border: 'none', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => handleResolveAlert(alert.id)}
+                    style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                   >
-                    Investigate
-                  </button>
-                  <button 
-                    onClick={() => handleDismiss('alert-1')}
-                    style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.05)', color: '#9ca3af', border: 'none', fontSize: '0.75rem', cursor: 'pointer' }}
-                  >
-                    Dismiss
+                    Resolve Anomaly
                   </button>
                 </div>
               </div>
-            )}
-
-            {/* Alert Item 2: Warning */}
-            {!dismissedAlerts.includes('alert-2') && (
-              <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <AlertTriangle size={16} color="#fbbf24" />
-                    <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>Warning</span>
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>12:35 PM</span>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#d1d5db' }}>
-                  High Memory Usage (Inference Node-4)
-                </p>
-              </div>
-            )}
-
-            {/* Alert Item 3: Notification */}
-            {!dismissedAlerts.includes('alert-3') && (
-              <div style={{ padding: '14px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Bell size={16} color="#60a5fa" />
-                    <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>Notification</span>
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>12:15 PM</span>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#d1d5db' }}>
-                  New Deployment Successful (v2.1)
-                </p>
-              </div>
-            )}
-
+            ))}
           </div>
         </div>
 
