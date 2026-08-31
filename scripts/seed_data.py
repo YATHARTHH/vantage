@@ -1,5 +1,9 @@
 import asyncio
+import sys
 from datetime import date, datetime, timedelta, timezone
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
