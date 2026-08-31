@@ -20,38 +20,24 @@
       "title": "Total Agent Cost (USD)",
       "type": "stat",
       "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "vantage-infinity"
+        "type": "marcusolsson-json-datasource",
+        "uid": "vantage-json-api"
       },
       "targets": [
         {
           "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "vantage-infinity"
+            "type": "marcusolsson-json-datasource",
+            "uid": "vantage-json-api"
           },
-          "type": "json",
-          "source": "url",
-          "url": "/query/agent-cost?project_id=search-v2",
-          "url_options": {
-            "method": "GET"
-          },
-          "parser": "backend",
-          "format": "table",
-          "root_selector": "",
-          "columns": [
-            {
-              "selector": "total_cost_usd",
-              "text": "total_cost_usd",
-              "type": "number"
-            }
-          ]
+          "endpoint": "/query/agent-cost?project_id=search-v2",
+          "method": "GET"
         }
       ],
       "options": {
         "reduceOptions": {
           "values": false,
           "calcs": ["sum"],
-          "fields": ""
+          "fields": "/total_cost_usd"
         },
         "colorMode": "value",
         "graphMode": "area",
@@ -86,43 +72,24 @@
       "title": "Total Tokens Processed",
       "type": "stat",
       "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "vantage-infinity"
+        "type": "marcusolsson-json-datasource",
+        "uid": "vantage-json-api"
       },
       "targets": [
         {
           "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "vantage-infinity"
+            "type": "marcusolsson-json-datasource",
+            "uid": "vantage-json-api"
           },
-          "type": "json",
-          "source": "url",
-          "url": "/query/agent-cost?project_id=search-v2",
-          "url_options": {
-            "method": "GET"
-          },
-          "parser": "backend",
-          "format": "table",
-          "root_selector": "",
-          "columns": [
-            {
-              "selector": "tokens_input",
-              "text": "tokens_input",
-              "type": "number"
-            },
-            {
-              "selector": "tokens_output",
-              "text": "tokens_output",
-              "type": "number"
-            }
-          ]
+          "endpoint": "/query/agent-cost?project_id=search-v2",
+          "method": "GET"
         }
       ],
       "options": {
         "reduceOptions": {
           "values": false,
           "calcs": ["sum"],
-          "fields": ""
+          "fields": "/tokens_input"
         },
         "colorMode": "value",
         "graphMode": "area"
@@ -154,38 +121,24 @@
       "title": "Active Agent Projects",
       "type": "stat",
       "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "vantage-infinity"
+        "type": "marcusolsson-json-datasource",
+        "uid": "vantage-json-api"
       },
       "targets": [
         {
           "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "vantage-infinity"
+            "type": "marcusolsson-json-datasource",
+            "uid": "vantage-json-api"
           },
-          "type": "json",
-          "source": "url",
-          "url": "/projects",
-          "url_options": {
-            "method": "GET"
-          },
-          "parser": "backend",
-          "format": "table",
-          "root_selector": "",
-          "columns": [
-            {
-              "selector": "id",
-              "text": "id",
-              "type": "string"
-            }
-          ]
+          "endpoint": "/projects",
+          "method": "GET"
         }
       ],
       "options": {
         "reduceOptions": {
           "values": false,
           "calcs": ["count"],
-          "fields": ""
+          "fields": "/id"
         },
         "colorMode": "value"
       },
@@ -216,61 +169,17 @@
       "title": "Agent Execution Spans & LLM Cost Breakdown",
       "type": "table",
       "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "vantage-infinity"
+        "type": "marcusolsson-json-datasource",
+        "uid": "vantage-json-api"
       },
       "targets": [
         {
           "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "vantage-infinity"
+            "type": "marcusolsson-json-datasource",
+            "uid": "vantage-json-api"
           },
-          "type": "json",
-          "source": "url",
-          "url": "/query/agent-cost?project_id=search-v2",
-          "url_options": {
-            "method": "GET"
-          },
-          "parser": "backend",
-          "format": "table",
-          "root_selector": "",
-          "columns": [
-            {
-              "selector": "trace_id",
-              "text": "Trace ID",
-              "type": "string"
-            },
-            {
-              "selector": "agent_name",
-              "text": "Agent Name",
-              "type": "string"
-            },
-            {
-              "selector": "llm_call_count",
-              "text": "LLM Calls",
-              "type": "number"
-            },
-            {
-              "selector": "tokens_input",
-              "text": "Input Tokens",
-              "type": "number"
-            },
-            {
-              "selector": "tokens_output",
-              "text": "Output Tokens",
-              "type": "number"
-            },
-            {
-              "selector": "total_cost_usd",
-              "text": "Total Cost (USD)",
-              "type": "number"
-            },
-            {
-              "selector": "status",
-              "text": "Status",
-              "type": "string"
-            }
-          ]
+          "endpoint": "/query/agent-cost?project_id=search-v2",
+          "method": "GET"
         }
       ],
       "options": {
@@ -280,8 +189,9 @@
         "defaults": {},
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "Total Cost (USD)" },
+            "matcher": { "id": "byName", "options": "total_cost_usd" },
             "properties": [
+              { "id": "custom.width", "value": 160 },
               { "id": "unit", "value": "currencyUSD" }
             ]
           }
