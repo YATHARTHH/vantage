@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Vantage CI Pipeline
 
 on:
   push:
@@ -11,31 +11,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Build React SPA Frontend
-        run: |
-          cd frontend
-          npm ci || npm install
-          npm run build
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
+          cache: "pip"
 
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-          pip install pytz pytest pytest-asyncio httpx uvicorn
+          pip install pytz pytest pytest-asyncio uvicorn httpx
 
       - name: Run Pytest Test Suite
         run: |
           pytest tests/ -v
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Build Frontend SPA
+        run: |
+          cd frontend
+          npm ci
+          npm run build
