@@ -17,6 +17,7 @@ async def projects_list_ui(
 ):
     projects = await repo.list_projects()
     return templates.TemplateResponse(
-        "projects/list.html",
-        {"request": request, "projects": [p.model_dump() for p in projects]},
+        request=request,
+        name="projects/list.html",
+        context={"projects": [p.model_dump() for p in projects]},
     )
