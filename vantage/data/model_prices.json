@@ -1,0 +1,43 @@
+{
+  "_metadata": {
+    "description": "LLM token pricing used by Vantage CostEnricher",
+    "note": "Verify prices against provider pages before implementation.",
+    "last_verified": null,
+    "maintainer": "platform-team"
+  },
+  "gpt-4o": {
+    "input_per_token": 0.0000025,
+    "output_per_token": 0.000010,
+    "currency": "USD",
+    "effective_from": "2024-11-01",
+    "source": "https://openai.com/api/pricing"
+  },
+  "gpt-4o-mini": {
+    "input_per_token": 0.00000015,
+    "output_per_token": 0.0000006,
+    "currency": "USD",
+    "effective_from": "2024-07-18",
+    "source": "https://openai.com/api/pricing"
+  },
+  "claude-3-5-sonnet-20241022": {
+    "input_per_token": 0.000003,
+    "output_per_token": 0.000015,
+    "currency": "USD",
+    "effective_from": "2024-10-22",
+    "source": "https://www.anthropic.com/pricing"
+  },
+  "claude-3-haiku-20240307": {
+    "input_per_token": 0.00000025,
+    "output_per_token": 0.00000125,
+    "currency": "USD",
+    "effective_from": "2024-03-07",
+    "source": "https://www.anthropic.com/pricing"
+  },
+  "gemini-2.0-flash": {
+    "input_per_token": 0.0000001,
+    "output_per_token": 0.0000004,
+    "currency": "USD",
+    "effective_from": "2025-02-05",
+    "source": "https://ai.google.dev/pricing"
+  }
+}
