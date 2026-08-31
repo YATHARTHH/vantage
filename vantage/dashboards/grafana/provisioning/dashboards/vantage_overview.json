@@ -31,7 +31,7 @@
           },
           "type": "json",
           "source": "url",
-          "url": "http://host.docker.internal:8000/api/v1/query/agent-cost?project_id=search-v2",
+          "url": "/query/agent-cost?project_id=search-v2",
           "url_options": {
             "method": "GET"
           },
@@ -97,7 +97,7 @@
           },
           "type": "json",
           "source": "url",
-          "url": "http://host.docker.internal:8000/api/v1/query/agent-cost?project_id=search-v2",
+          "url": "/query/agent-cost?project_id=search-v2",
           "url_options": {
             "method": "GET"
           },
@@ -165,7 +165,7 @@
           },
           "type": "json",
           "source": "url",
-          "url": "http://host.docker.internal:8000/api/v1/projects",
+          "url": "/projects",
           "url_options": {
             "method": "GET"
           },
@@ -227,7 +227,7 @@
           },
           "type": "json",
           "source": "url",
-          "url": "http://host.docker.internal:8000/api/v1/query/agent-cost?project_id=search-v2",
+          "url": "/query/agent-cost?project_id=search-v2",
           "url_options": {
             "method": "GET"
           },
