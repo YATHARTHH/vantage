@@ -42,4 +42,6 @@ vantage/storage/sqlalchemy/metadata_repository.py
 vantage/storage/sqlalchemy/models.py
 vantage/storage/sqlalchemy/session.py
 vantage/ui/__init__.py
+vantage/ui/experiments.py
 vantage/ui/projects.py
+vantage/ui/router.py
