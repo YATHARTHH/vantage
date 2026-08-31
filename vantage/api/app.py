@@ -59,10 +59,18 @@ def create_app() -> FastAPI:
 
     from pathlib import Path
     from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
 
     frontend_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
     if frontend_dist.exists():
-        app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+        app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="static_assets")
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_spa(full_path: str):
+            target = frontend_dist / full_path
+            if target.exists() and target.is_file():
+                return FileResponse(target)
+            return FileResponse(frontend_dist / "index.html")
 
     return app
 
