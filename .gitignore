@@ -29,8 +29,7 @@ frontend/dist/
 .npm/
 
 # Local Databases & Dynamic Data
-data/*.db
-data/*.duckdb
+data/
 *.db
 *.duckdb
 *.sqlite
