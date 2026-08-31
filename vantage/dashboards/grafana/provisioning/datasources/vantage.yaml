@@ -10,5 +10,8 @@ datasources:
       baseURL: "http://host.docker.internal:8000/api/v1"
       auth_type: "headers"
       httpHeaderName1: "X-API-Key"
+      allowedHosts:
+        - "http://host.docker.internal:8000"
+        - "http://host.docker.internal:8000/api/v1"
     secureJsonData:
       httpHeaderValue1: "dev-local-key"
