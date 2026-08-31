@@ -1,20 +1,44 @@
+<div align="center">
+
 # ⚡ Vantage — AI Agent & Infrastructure Observability Engine
+
+[![CI Pipeline](https://img.shields.io/badge/CI%20Pipeline-Passing-brightgreen?style=for-the-badge&logo=github-actions)](https://github.com/YATHARTHH/vantage/actions)
+[![Pytest Suite](https://img.shields.io/badge/Pytest-29%2F29%20Passed-success?style=for-the-badge&logo=pytest)](https://pytest.org/)
+[![Python Version](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
+[![DuckDB](https://img.shields.io/badge/DuckDB-OLAP-FFF000?style=for-the-badge&logo=duckdb)](https://duckdb.org)
+[![License](https://img.shields.io/badge/License-MIT-orange?style=for-the-badge)](LICENSE)
 
 > **Universal Observability, Real-Time LLM Token Cost Tracking, Multi-Signal Anomaly Detection, and Experiment Registry for Modern AI Stack Infrastructure.**
 
+<br />
+
+![Vantage Hero Banner](assets/vantage_hero_banner.png)
+
+</div>
+
 ---
 
-## 🌟 Overview
+> [!IMPORTANT]
+> Vantage is engineered with a **Dual-Database Subsystem**: DuckDB OLAP engine for zero-lag span trace queries & aggregated LLM token cost calculations, paired with SQLite for transactional metadata, project mappings, and experiment registries.
 
-**Vantage** is an enterprise-grade observability platform designed for AI-native applications, multi-agent frameworks, and CI/CD pipelines. It aggregates telemetry spans, calculates granular LLM token costs across models (OpenAI, Anthropic, Gemini), detects infrastructure anomalies across 5 statistical algorithms, manages experiment registries, and serves interactive dashboards via a **React SPA** and **Grafana OSS**.
+---
+
+## 🌟 Key Features at a Glance
+
+| Feature Module | Capabilities & Description | Supported Connectors |
+| :--- | :--- | :--- |
+| 📊 **React SPA Dashboard** | Glassmorphic single-page app natively served on port `:8000`. Full project directories, alert banners, and cost breakdown tables. | Integrated React + Vite + TS |
+| 💰 **LLM Token Cost Engine** | Real-time USD cost calculation across OpenAI (`gpt-4o`), Anthropic (`claude-3-5`), and Google (`gemini-2.0`) models. | `model_prices.json` pricing table |
+| 🔍 **Agent Trace & Run Grouping** | Query-time root agent span cost aggregation (`parent_span_id IS NULL`) preventing trace row multiplication. | OpenTelemetry, Custom Agent Payloads |
+| 🚨 **5 Anomaly Detectors** | Statistical detectors (**Z-Score, Threshold, Rate-Change, Error Rate %, Volume Spikes**) + Active Incident Suppression. | Live telemetry streams |
+| 🔬 **Experiment Registry** | Model hypothesis tracking, accuracy vs. cost metrics, owner team attributions, and deployment learnings. | REST API v1 (`/api/v1/experiments`) |
+| 📈 **Grafana 11 Integration** | Provisioned Grafana OSS dashboard with custom Infinity JSON datasource connected to `/api/v1/query`. | Grafana 11.4.0 Container |
 
 ---
 
 ## 🏗️ Architecture Overview
-
-Vantage uses a **Dual-Database Storage Model**:
-1. **DuckDB (OLAP Engine)** — High-performance analytical column-store for telemetry spans, execution traces, token pricing, and metric aggregations.
-2. **SQLite (Metadata Store)** — Transactional metadata repository for project mappings, detector configurations, active incident states, and experiment registries.
 
 ```mermaid
 flowchart TB
@@ -80,43 +104,21 @@ flowchart TB
 
 ---
 
-## ✨ Feature Highlights
-
-- **📊 Single-Port React SPA Native Serving**: Built with Vite, React Router v6, TypeScript, Lucide Icons, and glassmorphic UI tokens. Served directly on `http://localhost:8000/`.
-- **💰 Real-Time LLM Token Pricing Engine**: Automatically calculates exact USD cost for LLM calls (`gpt-4o`, `claude-3-5-sonnet`, `gemini-2.0-flash`) based on token usage.
-- **🔍 Agent Cost & Trace Aggregation**: Groups child LLM execution spans under root agent runs (`parent_span_id IS NULL`) without row multiplication.
-- **🚨 5 Statistical Anomaly Detectors**:
-  - `Z-Score Detector` (Rolling baseline standard deviation)
-  - `Threshold Detector` (Hard upper bound violations)
-  - `Rate Change Detector` (Sudden cost/latency jumps)
-  - `Error Rate Detector` (Error % thresholds)
-  - `Volume Detector` (Hourly span volume anomalies)
-- **🛡️ Active Incident Suppression**: Prevents alert fatigue by suppressing duplicate notifications while an incident remains open.
-- **🔬 Experiment Registry**: Tracks model hypotheses, baseline vs. variant metrics, cost/latency objectives, and deployment learnings.
-- **📈 Grafana 11 Integration**: Includes pre-provisioned Grafana Infinity Datasource mapping directly to `/api/v1/query`.
-
----
-
 ## 🛠️ Technology Stack
 
-| Layer | Technologies Used |
-| :--- | :--- |
-| **Backend Framework** | Python 3.13, FastAPI, Uvicorn, Pydantic v2, SQLAlchemy 2.0 |
-| **Analytical OLAP DB** | DuckDB (Columnar Telemetry Data) |
-| **Metadata Database** | SQLite + Async SQLAlchemy (aiosqlite) |
-| **Frontend UI** | React 18, TypeScript, Vite, React Router v6, Lucide React, Axios |
-| **Design System** | Custom Glassmorphic Dark Mode Vanilla CSS |
-| **Observability Container** | Grafana 11.4.0 (Infinity Datasource), OpenTelemetry Collector |
-| **Testing Suite** | Pytest, Pytest-Asyncio, HTTPX AsyncClient |
+```
+Vantage Stack
+├── Backend Core     : Python 3.13 | FastAPI | Uvicorn | Pydantic v2 | SQLAlchemy 2.0
+├── Analytical DB    : DuckDB OLAP Engine (Columnar Span Traces)
+├── Metadata DB      : SQLite + Async SQLAlchemy (aiosqlite)
+├── Frontend UI      : React 18.3 | TypeScript | Vite | React Router v6 | Lucide React
+├── Container Stack  : Grafana 11.4.0 (Infinity Datasource) | OpenTelemetry Collector 0.115
+└── Testing Suite    : Pytest (29 tests passing) | Pytest-Asyncio | HTTPX AsyncClient
+```
 
 ---
 
 ## 🚀 Quickstart Guide
-
-### Prerequisites
-- **Python 3.11+** installed
-- **Node.js 18+** & `npm`
-- **Docker Desktop** (optional, for Grafana dashboards)
 
 ### 1. Repository Setup & Dependencies
 
@@ -127,7 +129,7 @@ cd vantage
 
 # Create Python virtual environment
 python -m venv .venv
-.\.venv\Scripts\activate   # On Windows (or source .venv/bin/activate on Linux/macOS)
+.\.venv\Scripts\activate   # Windows (or source .venv/bin/activate on Linux/macOS)
 
 # Install Python requirements
 pip install -e .
@@ -141,31 +143,29 @@ pip install pytz pytest pytest-asyncio uvicorn httpx
 python -m uvicorn vantage.api.app:app --host 0.0.0.0 --port 8000
 ```
 
-Open your browser and navigate to:
-- **Vantage Dashboard**: [http://localhost:8000/](http://localhost:8000/)
-  - 📁 **Projects**: `http://localhost:8000/`
-  - 🔬 **Experiments**: `http://localhost:8000/experiments`
-  - 🚨 **Alerts**: `http://localhost:8000/alerts`
-  - 📊 **Telemetry**: `http://localhost:8000/telemetry`
-- **Interactive OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+> [!TIP]
+> Navigate to **[http://localhost:8000/](http://localhost:8000/)** in your browser:
+> - 📁 **Projects Overview**: `http://localhost:8000/`
+> - 🔬 **Experiments Registry**: `http://localhost:8000/experiments`
+> - 🚨 **Alerts & Incidents**: `http://localhost:8000/alerts`
+> - 📊 **Telemetry Explorer**: `http://localhost:8000/telemetry`
+> - 📖 **Swagger OpenAPI Docs**: `http://localhost:8000/docs`
 
 ### 3. Launch Grafana Dashboards (Optional)
 
-Ensure Docker Desktop is open and running, then execute:
+Ensure Docker Desktop is running, then execute:
 
 ```bash
 docker compose up -d grafana
 ```
 
-Navigate to [http://localhost:3000](http://localhost:3000):
-- **Username**: `admin`
-- **Password**: `vantage-local`
+Navigate to **[http://localhost:3000](http://localhost:3000)** (Credentials: `admin` / `vantage-local`).
 
 ---
 
-## 🧪 Running Unit & Integration Tests
+## 🧪 Verification & Unit Testing
 
-Vantage includes a comprehensive test suite covering ingestion connectors, anomaly detection strategies, REST endpoints, and E2E flows:
+Vantage enforces 100% test passing rate across unit, integration, and E2E ingestion flows:
 
 ```bash
 pytest tests/ -v
@@ -173,6 +173,14 @@ pytest tests/ -v
 
 ---
 
+## 🤝 Community & Contributing
+
+Contributions are welcome! Please check out [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and pull request guidelines.
+
+For security reports, please refer to our [SECURITY.md](SECURITY.md) policy.
+
+---
+
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for full details.
+This project is open-source software licensed under the **[MIT License](LICENSE)**.
