@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from vantage.api.v1.router import api_v1_router
+from vantage.ui.router import ui_router
 from vantage.core.config import get_settings
 from vantage.core.logging import get_logger, setup_logging
 
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_v1_router, prefix=settings.api_prefix)
+    app.include_router(ui_router)
 
     @app.get("/health", status_code=status.HTTP_200_OK, tags=["Health"])
     async def health_check():
