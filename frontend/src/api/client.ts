@@ -52,17 +52,27 @@ export interface Experiment {
 }
 
 export interface AlertRecord {
-  id: string;
+  id?: string;
+  alert_id?: string;
   project_id: string;
   detector_type: string;
   metric_name: string;
   incident_key: string;
-  title: string;
+  title?: string;
+  message?: string;
   severity: string;
   observed_value: number;
   threshold_value: number;
-  triggered_at: string;
+  triggered_at?: string;
+  fired_at?: string;
   resolved_at?: string;
+  category?: 'observability' | 'security';
+  security_incident_key?: string;
+  trace_id?: string;
+  span_id?: string;
+  threat_types?: string[];
+  resolution_reason?: string;
+  resolution_note?: string;
 }
 
 export interface AgentRunCost {
@@ -102,9 +112,25 @@ export const VantageAPI = {
     const res = await api.get(`/alerts?unresolved_only=${unresolvedOnly}`);
     return res.data;
   },
-  resolveAlert: async (alertId: string): Promise<{ resolved: boolean }> => {
-    const res = await api.patch(`/alerts/${alertId}/resolve`);
+  resolveAlert: async (
+    alertId: string,
+    reason?: string,
+    note?: string,
+    ttlHours?: number | null,
+    scope?: string,
+    exportFormat?: string
+  ): Promise<{ resolved: boolean }> => {
+    const res = await api.patch(`/alerts/${alertId}/resolve`, {
+      reason,
+      note,
+      ttl_hours: ttlHours,
+      scope: scope || 'project',
+      export_format: exportFormat || 'dpo'
+    });
     return res.data;
+  },
+  downloadAdversarialDatasetUrl: (): string => {
+    return '/api/v1/alerts/export/dataset';
   },
 
   // Telemetry & Agent Cost

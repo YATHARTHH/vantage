@@ -1,5 +1,7 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from uuid import uuid4
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -17,6 +19,7 @@ from vantage.storage.base import AbstractMetadataRepository
 from vantage.storage.sqlalchemy.models import (
     AlertRecordModel,
     AlertRuleModel,
+    AlertSuppressionRuleModel,
     ExperimentModel,
     ProjectModel,
     ProjectSourceMappingModel,
@@ -357,6 +360,15 @@ class SQLiteMetadataRepository(AbstractMetadataRepository):
             return saved or rule
 
     async def has_active_alert(self, incident_key: str) -> bool:
+        if incident_key.startswith("security:"):
+            async with self._session_factory() as session:
+                stmt = sa.select(AlertRecordModel.id).where(
+                    AlertRecordModel.security_incident_key == incident_key,
+                    AlertRecordModel.resolved_at == None,  # noqa: E711
+                )
+                res = await session.execute(stmt)
+                return res.scalar_one_or_none() is not None
+
         parts = incident_key.split(":", 2)
         if len(parts) != 3:
             return False
@@ -385,6 +397,17 @@ class SQLiteMetadataRepository(AbstractMetadataRepository):
                     if isinstance(alert.severity, AlertSeverity)
                     else str(alert.severity)
                 )
+                cat = (
+                    alert.category.value
+                    if hasattr(alert, "category") and alert.category
+                    else "observability"
+                )
+                threats_json = (
+                    json.dumps(alert.threat_types)
+                    if hasattr(alert, "threat_types") and alert.threat_types
+                    else None
+                )
+
                 model = AlertRecordModel(
                     alert_uuid=str(alert.alert_id),
                     project_id=alert.project_id,
@@ -397,11 +420,24 @@ class SQLiteMetadataRepository(AbstractMetadataRepository):
                     fired_at=alert.fired_at,
                     resolved_at=alert.resolved_at,
                     notified=alert.notified,
+                    category=cat,
+                    security_incident_key=alert.security_incident_key,
+                    trace_id=alert.trace_id,
+                    span_id=alert.span_id,
+                    threat_types_json=threats_json,
                 )
                 session.add(model)
             return alert
 
-    async def resolve_alert(self, alert_id: str) -> bool:
+    async def resolve_alert(
+        self,
+        alert_id: str,
+        reason: str | None = None,
+        note: str | None = None,
+        ttl_hours: int | None = None,
+        scope: str = "project",
+        export_format: str = "dpo"
+    ) -> bool:
         async with self._session_factory() as session:
             async with session.begin():
                 stmt = sa.select(AlertRecordModel).where(
@@ -412,7 +448,106 @@ class SQLiteMetadataRepository(AbstractMetadataRepository):
                 if not model:
                     return False
                 model.resolved_at = datetime.now(timezone.utc)
+
+                # Option 1: False Positive -> Create Time-Bound Suppression Rule (TTL)
+                if reason and "False Positive" in reason:
+                    expires_at = datetime.utcnow() + timedelta(hours=ttl_hours) if ttl_hours else None
+                    supp_model = AlertSuppressionRuleModel(
+                        rule_id=str(uuid4()),
+                        project_id=model.project_id if scope == "project" else "*",
+                        detector_type=model.detector_type,
+                        incident_key=model.security_incident_key or f"security:{model.project_id}:{model.trace_id}:{model.span_id}:false_positive",
+                        pattern_text=model.message,
+                        expires_at=expires_at,
+                        scope=scope,
+                        created_at=datetime.utcnow()
+                    )
+                    session.add(supp_model)
+
+                # Option 2: Threat Mitigated & Closed -> Export DPO Fine-Tuning Pair Dataset
+                if reason and ("Threat Mitigated" in reason or "Sanitized" in reason or "Policy Updated" in reason):
+                    export_dir = Path("export")
+                    export_dir.mkdir(exist_ok=True)
+                    export_file = export_dir / "adversarial_dataset.jsonl"
+                    threats = json.loads(model.threat_types_json) if model.threat_types_json else []
+
+                    if export_format == "dpo":
+                        entry = {
+                            "id": model.alert_uuid,
+                            "project_id": model.project_id,
+                            "disposition": reason,
+                            "prompt": model.message,
+                            "chosen": "I cannot fulfill this request. Security policy violation.",
+                            "rejected": "Raw execution output: Request granted.",
+                            "metadata": {
+                                "detector_type": model.detector_type,
+                                "threat_types": threats,
+                                "threat_score": model.current_value,
+                                "exported_at": datetime.now(timezone.utc).isoformat()
+                            }
+                        }
+                    else:
+                        entry = {
+                            "id": model.alert_uuid,
+                            "project_id": model.project_id,
+                            "trace_id": model.trace_id,
+                            "span_id": model.span_id,
+                            "disposition": reason,
+                            "notes": note or "",
+                            "messages": [
+                                {"role": "user", "content": model.message},
+                                {"role": "assistant", "content": "I cannot fulfill this request. Security policy violation."}
+                            ],
+                            "metadata": {
+                                "detector_type": model.detector_type,
+                                "threat_types": threats,
+                                "threat_score": model.current_value,
+                                "exported_at": datetime.now(timezone.utc).isoformat()
+                            }
+                        }
+
+                    with open(export_file, "a", encoding="utf-8") as f:
+                        f.write(json.dumps(entry) + "\n")
+
+                # Option 3 & 4: Upstream Input Sanitized / Policy Updated -> Update Project Policy
+                if reason and ("Sanitized" in reason or "Policy Updated" in reason):
+                    p_stmt = sa.select(ProjectModel).where(ProjectModel.id == model.project_id)
+                    p_res = await session.execute(p_stmt)
+                    p_model = p_res.scalar_one_or_none()
+                    if p_model:
+                        p_model.log_prompts = False
+
                 return True
+
+    async def is_suppressed(self, project_id: str, incident_key: str, threat_type: str | None = None) -> bool:
+        async with self._session_factory() as session:
+            now = datetime.utcnow()
+            stmt = sa.select(AlertSuppressionRuleModel.id).where(
+                sa.or_(
+                    AlertSuppressionRuleModel.project_id == project_id,
+                    AlertSuppressionRuleModel.project_id == "*",
+                    AlertSuppressionRuleModel.project_id == "__unmapped__",
+                    AlertSuppressionRuleModel.scope == "global"
+                ),
+                sa.or_(
+                    AlertSuppressionRuleModel.expires_at == None,
+                    AlertSuppressionRuleModel.expires_at > now
+                )
+            )
+            if threat_type:
+                stmt = stmt.where(
+                    sa.or_(
+                        AlertSuppressionRuleModel.incident_key == incident_key,
+                        AlertSuppressionRuleModel.incident_key == f"security:{project_id}:suppress:{threat_type}",
+                        AlertSuppressionRuleModel.incident_key == f"security:*:suppress:{threat_type}",
+                        AlertSuppressionRuleModel.incident_key == f"security:__unmapped__:suppress:{threat_type}"
+                    )
+                )
+            else:
+                stmt = stmt.where(AlertSuppressionRuleModel.incident_key == incident_key)
+
+            res = await session.execute(stmt)
+            return res.scalar_one_or_none() is not None
 
     async def list_alerts(
         self, project_id: str | None = None, unresolved_only: bool = False
@@ -440,6 +575,11 @@ class SQLiteMetadataRepository(AbstractMetadataRepository):
                     fired_at=m.fired_at,
                     resolved_at=m.resolved_at,
                     notified=m.notified,
+                    category=m.category or "observability",
+                    security_incident_key=m.security_incident_key,
+                    trace_id=m.trace_id,
+                    span_id=m.span_id,
+                    threat_types=json.loads(m.threat_types_json) if m.threat_types_json else [],
                 )
                 for m in models
             ]
