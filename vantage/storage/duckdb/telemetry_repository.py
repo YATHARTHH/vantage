@@ -50,6 +50,20 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
         sql = schema_path.read_text()
         conn = self._conn
         await asyncio.to_thread(conn.execute, sql)
+        migrations = [
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_scanned BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_is_threat BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_risk_level VARCHAR",
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_threat_types VARCHAR",
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_score DOUBLE",
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_matched_rules VARCHAR",
+            "ALTER TABLE telemetry_spans ADD COLUMN IF NOT EXISTS security_scanner_version VARCHAR",
+        ]
+        for m in migrations:
+            try:
+                await asyncio.to_thread(conn.execute, m)
+            except Exception:
+                pass
 
     def _envelope_to_row(self, env: TelemetryEnvelope) -> tuple:
         ext_id = env.external_event_id or f"{env.span.trace_id}:{env.span.span_id}"
@@ -65,6 +79,26 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
         branch = getattr(payload, "branch", None)
         commit_sha = getattr(payload, "commit_sha", None)
         pipeline_name = getattr(payload, "pipeline_name", None)
+
+        sec = env.security
+        if isinstance(sec, dict):
+            sec_scanned = sec.get("scanned", False)
+            sec_is_threat = sec.get("is_threat", False)
+            sec_risk_level = str(sec.get("risk_level")) if sec.get("risk_level") else None
+            sec_threat_types = json.dumps(sec.get("threat_types", [])) if sec.get("threat_types") else None
+            sec_score = sec.get("threat_score")
+            sec_matched_rules = json.dumps(sec.get("matched_rules", [])) if sec.get("matched_rules") else None
+            sec_scanner_version = sec.get("scanner_version")
+        elif sec:
+            sec_scanned = sec.scanned
+            sec_is_threat = sec.is_threat
+            sec_risk_level = str(sec.risk_level) if sec.risk_level else None
+            sec_threat_types = json.dumps([str(t) for t in sec.threat_types]) if sec.threat_types else None
+            sec_score = sec.threat_score
+            sec_matched_rules = json.dumps(sec.matched_rules) if sec.matched_rules else None
+            sec_scanner_version = sec.scanner_version
+        else:
+            sec_scanned, sec_is_threat, sec_risk_level, sec_threat_types, sec_score, sec_matched_rules, sec_scanner_version = False, False, None, None, None, None, None
 
         return (
             str(env.event_id),
@@ -95,6 +129,13 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
             env.environment,
             env.owner_team,
             json.dumps(env.tags),
+            sec_scanned,
+            sec_is_threat,
+            sec_risk_level,
+            sec_threat_types,
+            sec_score,
+            sec_matched_rules,
+            sec_scanner_version,
         )
 
     async def insert(self, envelope: TelemetryEnvelope) -> bool:
@@ -109,9 +150,11 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
                     source_trace_id, source_span_id, external_event_id, event_kind,
                     started_at, ended_at, duration_ms, status, error_message, error_type,
                     model_name, model_provider, tokens_input, tokens_output, cost_usd,
-                    repo_name, branch, commit_sha, pipeline_name, environment, owner_team, tags
+                    repo_name, branch, commit_sha, pipeline_name, environment, owner_team, tags,
+                    security_scanned, security_is_threat, security_risk_level, security_threat_types,
+                    security_score, security_matched_rules, security_scanner_version
                 ) VALUES (
-                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
                 )
                 ON CONFLICT (source_tool, external_event_id)
                 DO NOTHING

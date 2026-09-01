@@ -11,12 +11,18 @@ class AlertSeverity(str, Enum):
     CRITICAL = "critical"
 
 
+class AlertCategory(str, Enum):
+    OBSERVABILITY = "observability"
+    SECURITY = "security"
+
+
 class DetectorType(str, Enum):
     THRESHOLD = "threshold"
     Z_SCORE = "z_score"
     RATE_CHANGE = "rate_change"
     ERROR_RATE = "error_rate"
     VOLUME = "volume"
+    JAILBREAK_SECURITY = "jailbreak_security"
 
 
 class DetectorResult(BaseModel):
@@ -46,9 +52,18 @@ class AlertRecord(BaseModel):
     fired_at: datetime
     resolved_at: datetime | None = None
     notified: bool = False
+    
+    # Extended Security Fields
+    category: AlertCategory = AlertCategory.OBSERVABILITY
+    security_incident_key: str | None = None
+    trace_id: str | None = None
+    span_id: str | None = None
+    threat_types: list[str] = Field(default_factory=list)
 
     @property
     def incident_key(self) -> str:
+        if self.security_incident_key:
+            return self.security_incident_key
         return f"{self.project_id}:{self.detector_type}:{self.metric_name}"
 
 

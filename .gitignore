@@ -47,3 +47,18 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Scratch & debug scripts (not part of the project)
+check_resolution_status.py
+check_supp.py
+clear_rules.py
+test_dpo_export.py
+test_production_resolution.py
+test_resolution_backend.py
+test_scan.py
+
+# Adversarial dataset exports (generated at runtime, not source controlled)
+export/
+
+# Logs
+*.log

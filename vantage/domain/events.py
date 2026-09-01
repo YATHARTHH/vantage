@@ -112,6 +112,17 @@ class UnclassifiedData(BaseModel):
     safe_attributes: dict[str, str] = Field(default_factory=dict)
 
 
+class SecurityMetadata(BaseModel):
+    scanned: bool = True
+    is_threat: bool = False
+    risk_level: str | None = None
+    threat_types: list[str] = Field(default_factory=list)
+    threat_score: float | None = None
+    matched_rules: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+    scanner_version: str | None = "v1.0.0"
+
+
 EventPayload = Annotated[
     Union[
         LLMCallData,
@@ -156,6 +167,7 @@ class TelemetryEnvelope(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict)
 
     payload: EventPayload
+    security: SecurityMetadata | None = None
 
     ingested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

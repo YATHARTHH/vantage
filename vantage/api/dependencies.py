@@ -11,6 +11,9 @@ from vantage.storage.duckdb.telemetry_repository import DuckDBTelemetryRepositor
 from vantage.storage.sqlalchemy.metadata_repository import SQLiteMetadataRepository
 from vantage.storage.sqlalchemy.session import get_session_factory
 
+from vantage.security.jailbreak_detector import JailbreakDetector
+from vantage.services.security_alert_service import SecurityAlertService
+
 require_api_key = verify_api_key
 
 
@@ -44,10 +47,24 @@ def get_pii_filter(
     return PIIFilter(metadata_repo)
 
 
+def get_security_alert_service(
+    metadata_repo: SQLiteMetadataRepository = Depends(get_metadata_repository),
+) -> SecurityAlertService:
+    return SecurityAlertService(metadata_repo)
+
+
 def get_ingestion_service(
     telemetry_repo: DuckDBTelemetryRepository = Depends(get_telemetry_repository),
     project_mapper: ProjectMapper = Depends(get_project_mapper),
     pii_filter: PIIFilter = Depends(get_pii_filter),
     cost_enricher: CostEnricher = Depends(get_cost_enricher),
+    security_alert_svc: SecurityAlertService = Depends(get_security_alert_service),
 ) -> IngestionService:
-    return IngestionService(telemetry_repo, project_mapper, pii_filter, cost_enricher)
+    return IngestionService(
+        telemetry_repo,
+        project_mapper,
+        pii_filter,
+        cost_enricher,
+        jailbreak_detector=JailbreakDetector(),
+        security_alert_service=security_alert_svc,
+    )

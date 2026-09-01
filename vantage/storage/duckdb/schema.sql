@@ -38,6 +38,15 @@ CREATE TABLE IF NOT EXISTS telemetry_spans (
     owner_team        VARCHAR,
     tags              JSON DEFAULT '{}',
 
+    -- Security Scan Metadata
+    security_scanned          BOOLEAN DEFAULT FALSE,
+    security_is_threat        BOOLEAN DEFAULT FALSE,
+    security_risk_level       VARCHAR,
+    security_threat_types     VARCHAR,
+    security_score            DOUBLE,
+    security_matched_rules    VARCHAR,
+    security_scanner_version  VARCHAR,
+
     ingested_at       TIMESTAMPTZ DEFAULT now()
 );
 
