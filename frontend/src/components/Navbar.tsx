@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -16,14 +16,29 @@ import {
   ShieldAlert, 
   ChevronRight,
   BookOpen,
-  HeartPulse
+  HeartPulse,
+  CheckCircle2
 } from 'lucide-react';
+import { VantageAPI, AlertRecord } from '../api/client';
 
 export const Navbar: React.FC = () => {
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
+  const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchNavbarAlerts = async () => {
+      try {
+        const data = await VantageAPI.getAlerts(false);
+        setAlerts(data);
+      } catch (err) {
+        console.error('Failed to fetch navbar alerts:', err);
+      }
+    };
+    fetchNavbarAlerts();
+  }, []);
 
   const handleCopyKey = () => {
     navigator.clipboard.writeText('dev-local-key');
@@ -221,9 +236,9 @@ export const Navbar: React.FC = () => {
               style={{
                 padding: '8px 12px',
                 borderRadius: '10px',
-                background: 'rgba(244, 63, 94, 0.15)',
+                background: alerts.length > 0 ? 'rgba(244, 63, 94, 0.15)' : 'rgba(52, 211, 153, 0.15)',
                 color: '#ffffff',
-                border: '1px solid rgba(244, 63, 94, 0.3)',
+                border: alerts.length > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid rgba(52, 211, 153, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
@@ -231,9 +246,11 @@ export const Navbar: React.FC = () => {
                 transition: 'all 0.2s ease'
               }}
             >
-              <Bell size={16} color="#f87171" />
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f87171' }}>Alerts</span>
-              <span style={{ background: '#f43f5e', color: '#ffffff', fontSize: '0.65rem', fontWeight: 800, borderRadius: '9999px', padding: '1px 6px' }}>3</span>
+              <Bell size={16} color={alerts.length > 0 ? '#f87171' : '#34d399'} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: alerts.length > 0 ? '#f87171' : '#34d399' }}>Alerts</span>
+              <span style={{ background: alerts.length > 0 ? '#f43f5e' : '#10b981', color: '#ffffff', fontSize: '0.65rem', fontWeight: 800, borderRadius: '9999px', padding: '1px 6px' }}>
+                {alerts.length}
+              </span>
             </button>
 
             {/* Alerts Dropdown Modal */}
@@ -246,7 +263,7 @@ export const Navbar: React.FC = () => {
                   width: '320px',
                   background: 'rgba(18, 24, 36, 0.95)',
                   backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(244, 63, 94, 0.3)',
+                  border: '1px solid rgba(6, 182, 212, 0.3)',
                   borderRadius: '16px',
                   padding: '16px',
                   boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
@@ -258,25 +275,28 @@ export const Navbar: React.FC = () => {
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldAlert size={16} color="#f87171" />
+                    <ShieldAlert size={16} color="#22d3ee" />
                     <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>Active Anomaly Feed</span>
                   </div>
-                  <span style={{ fontSize: '0.7rem', color: '#f87171', background: 'rgba(244, 63, 94, 0.2)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>3 Active</span>
+                  <span style={{ fontSize: '0.7rem', color: '#22d3ee', background: 'rgba(6, 182, 212, 0.2)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                    {alerts.length} Active
+                  </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
-                  <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(244, 63, 94, 0.1)', borderLeft: '3px solid #f43f5e' }}>
-                    <p style={{ fontWeight: 600, color: '#ffffff' }}>LLM Latency Spike (API Gateway)</p>
-                    <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Observed: 4,200ms (Threshold: 1,500ms)</p>
-                  </div>
-                  <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', borderLeft: '3px solid #f59e0b' }}>
-                    <p style={{ fontWeight: 600, color: '#ffffff' }}>High Token Consumption</p>
-                    <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Observed: 84.2M tokens/hr</p>
-                  </div>
-                  <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', borderLeft: '3px solid #3b82f6' }}>
-                    <p style={{ fontWeight: 600, color: '#ffffff' }}>New Model Deployment</p>
-                    <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>GPT-4o fine-tuned v2.1 active</p>
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem', maxHeight: '240px', overflowY: 'auto' }}>
+                  {alerts.length === 0 && (
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#9ca3af', fontSize: '0.8rem' }}>
+                      <CheckCircle2 size={20} color="#34d399" style={{ margin: '0 auto 6px' }} />
+                      No active anomalies. All services operating normally.
+                    </div>
+                  )}
+
+                  {alerts.map((a) => (
+                    <div key={a.id} style={{ padding: '8px 10px', borderRadius: '8px', background: a.severity === 'critical' ? 'rgba(244, 63, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)', borderLeft: a.severity === 'critical' ? '3px solid #f43f5e' : '3px solid #f59e0b' }}>
+                      <p style={{ fontWeight: 600, color: '#ffffff' }}>{a.title}</p>
+                      <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Value: {a.observed_value} (Threshold: {a.threshold_value})</p>
+                    </div>
+                  ))}
                 </div>
 
                 <button
