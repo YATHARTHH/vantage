@@ -87,7 +87,7 @@ export const AlertsPage: React.FC = () => {
                   {isResolved ? (
                     <span style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 600 }}>Resolved</span>
                   ) : (
-                    <button className="glass-button" style={{ background: 'rgba(244, 63, 94, 0.2)', border: '1px solid rgba(244, 63, 94, 0.4)' }} onClick={() => handleResolve(alert.id)}>
+                    <button className="glass-button" style={{ background: 'rgba(244, 63, 94, 0.2)', border: '1px solid rgba(244, 63, 94, 0.4)' }} onClick={() => handleResolve(alert.id || alert.alert_id || '')}>
                       Acknowledge & Resolve
                     </button>
                   )}

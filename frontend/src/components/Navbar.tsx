@@ -31,13 +31,25 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     const fetchNavbarAlerts = async () => {
       try {
-        const data = await VantageAPI.getAlerts(false);
-        setAlerts(data);
+        const data = await VantageAPI.getAlerts(true);
+        let savedResolved: string[] = [];
+        try {
+          const raw = localStorage.getItem('vantage_resolved_alerts');
+          savedResolved = raw ? JSON.parse(raw) : [];
+        } catch {}
+        const active = data.filter((a) => !a.resolved_at && !savedResolved.includes(a.alert_id || a.id || ''));
+        setAlerts(active);
       } catch (err) {
         console.error('Failed to fetch navbar alerts:', err);
       }
     };
+
     fetchNavbarAlerts();
+
+    window.addEventListener('vantage-alerts-updated', fetchNavbarAlerts);
+    return () => {
+      window.removeEventListener('vantage-alerts-updated', fetchNavbarAlerts);
+    };
   }, []);
 
   const handleCopyKey = () => {

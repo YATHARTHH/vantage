@@ -120,3 +120,31 @@ class AlertRecordModel(Base):
     fired_at: Mapped[datetime] = mapped_column(sa.DateTime, nullable=False)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
     notified: Mapped[bool] = mapped_column(sa.Boolean, default=False)
+
+    category: Mapped[str] = mapped_column(sa.String, default="observability")
+    security_incident_key: Mapped[Optional[str]] = mapped_column(sa.String)
+    trace_id: Mapped[Optional[str]] = mapped_column(sa.String)
+    span_id: Mapped[Optional[str]] = mapped_column(sa.String)
+    threat_types_json: Mapped[Optional[str]] = mapped_column(sa.Text)
+
+    __table_args__ = (
+        sa.UniqueConstraint("category", "security_incident_key", name="uq_security_incident_key"),
+    )
+
+
+class AlertSuppressionRuleModel(Base):
+    __tablename__ = "alert_suppression_rules"
+
+    id: Mapped[int] = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
+    rule_id: Mapped[str] = mapped_column(sa.String, unique=True, nullable=False)
+    project_id: Mapped[str] = mapped_column(sa.String, nullable=False)
+    detector_type: Mapped[str] = mapped_column(sa.String, nullable=False)
+    incident_key: Mapped[str] = mapped_column(sa.String, nullable=False)
+    pattern_text: Mapped[Optional[str]] = mapped_column(sa.Text)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
+    scope: Mapped[str] = mapped_column(sa.String, default="project")
+    created_at: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        sa.UniqueConstraint("project_id", "incident_key", name="uq_suppression_rule"),
+    )

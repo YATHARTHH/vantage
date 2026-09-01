@@ -1,4 +1,5 @@
 from pathlib import Path
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -29,3 +30,17 @@ async def init_db(engine: AsyncEngine | None = None) -> None:
     eng = engine or get_engine()
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        migrations = [
+            "ALTER TABLE alert_records ADD COLUMN category VARCHAR DEFAULT 'observability'",
+            "ALTER TABLE alert_records ADD COLUMN security_incident_key VARCHAR",
+            "ALTER TABLE alert_records ADD COLUMN trace_id VARCHAR",
+            "ALTER TABLE alert_records ADD COLUMN span_id VARCHAR",
+            "ALTER TABLE alert_records ADD COLUMN threat_types_json TEXT",
+            "ALTER TABLE alert_suppression_rules ADD COLUMN expires_at DATETIME",
+            "ALTER TABLE alert_suppression_rules ADD COLUMN scope VARCHAR DEFAULT 'project'",
+        ]
+        for m in migrations:
+            try:
+                await conn.execute(sa.text(m))
+            except Exception:
+                pass
