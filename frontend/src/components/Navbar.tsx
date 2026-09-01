@@ -1,13 +1,41 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Layers, TestTube2, AlertTriangle, Activity, BarChart3, Search, Bell } from 'lucide-react';
+import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Layers, 
+  TestTube2, 
+  AlertTriangle, 
+  Activity, 
+  BarChart3, 
+  Search, 
+  Bell, 
+  Key, 
+  ExternalLink, 
+  Check, 
+  Copy, 
+  ShieldAlert, 
+  ChevronRight,
+  BookOpen,
+  HeartPulse
+} from 'lucide-react';
 
 export const Navbar: React.FC = () => {
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCopyKey = () => {
+    navigator.clipboard.writeText('dev-local-key');
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
   return (
     <header style={{ borderBottom: '1px solid var(--border-glass)', background: 'rgba(11, 15, 25, 0.85)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
         
-        {/* Brand Logo & Name matching Banner */}
+        {/* Brand Logo & Name */}
         <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-start' }}>
           <div style={{ 
             width: '36px', 
@@ -31,8 +59,8 @@ export const Navbar: React.FC = () => {
           </div>
         </NavLink>
 
-        {/* Global Search Input Bar matching Banner */}
-        <div style={{ flex: 1, maxWidth: '400px', position: 'relative' }}>
+        {/* Global Search Bar */}
+        <div style={{ flex: 1, maxWidth: '380px', position: 'relative' }}>
           <Search size={16} color="#6b7280" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
@@ -45,8 +73,7 @@ export const Navbar: React.FC = () => {
               padding: '8px 40px 8px 38px',
               color: '#ffffff',
               fontSize: '0.85rem',
-              outline: 'none',
-              transition: 'all 0.2s ease'
+              outline: 'none'
             }}
           />
           <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: '#6b7280', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>
@@ -54,7 +81,7 @@ export const Navbar: React.FC = () => {
           </span>
         </div>
 
-        {/* Center Nav Links */}
+        {/* Navigation Links */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <NavLink
             to="/"
@@ -181,21 +208,225 @@ export const Navbar: React.FC = () => {
           </a>
         </nav>
 
-        {/* Right Header Actions matching Banner */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ position: 'relative', cursor: 'pointer' }}>
-            <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.05)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Bell size={16} />
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f43f5e' }}>Alerts</span>
+        {/* Right Header Interactive Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', position: 'relative' }}>
+          
+          {/* Interactive Alerts Dropdown Button */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => {
+                setAlertsOpen(!alertsOpen);
+                setUserMenuOpen(false);
+              }}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '10px',
+                background: 'rgba(244, 63, 94, 0.15)',
+                color: '#ffffff',
+                border: '1px solid rgba(244, 63, 94, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Bell size={16} color="#f87171" />
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f87171' }}>Alerts</span>
               <span style={{ background: '#f43f5e', color: '#ffffff', fontSize: '0.65rem', fontWeight: 800, borderRadius: '9999px', padding: '1px 6px' }}>3</span>
-            </div>
+            </button>
+
+            {/* Alerts Dropdown Modal */}
+            {alertsOpen && (
+              <div 
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '48px',
+                  width: '320px',
+                  background: 'rgba(18, 24, 36, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(244, 63, 94, 0.3)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldAlert size={16} color="#f87171" />
+                    <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>Active Anomaly Feed</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#f87171', background: 'rgba(244, 63, 94, 0.2)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>3 Active</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
+                  <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(244, 63, 94, 0.1)', borderLeft: '3px solid #f43f5e' }}>
+                    <p style={{ fontWeight: 600, color: '#ffffff' }}>LLM Latency Spike (API Gateway)</p>
+                    <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Observed: 4,200ms (Threshold: 1,500ms)</p>
+                  </div>
+                  <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', borderLeft: '3px solid #f59e0b' }}>
+                    <p style={{ fontWeight: 600, color: '#ffffff' }}>High Token Consumption</p>
+                    <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Observed: 84.2M tokens/hr</p>
+                  </div>
+                  <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', borderLeft: '3px solid #3b82f6' }}>
+                    <p style={{ fontWeight: 600, color: '#ffffff' }}>New Model Deployment</p>
+                    <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>GPT-4o fine-tuned v2.1 active</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setAlertsOpen(false);
+                    navigate('/alerts');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    background: 'rgba(99, 102, 241, 0.2)',
+                    border: '1px solid rgba(99, 102, 241, 0.4)',
+                    color: '#ffffff',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  View All Alerts in Dashboard <ChevronRight size={14} />
+                </button>
+              </div>
+            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', borderRadius: '9999px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #818cf8, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#ffffff', fontSize: '0.75rem' }}>
-              Y
+          {/* Interactive User Profile Avatar ('Y' - Yatharth Singhai) */}
+          <div style={{ position: 'relative' }}>
+            <div
+              onClick={() => {
+                setUserMenuOpen(!userMenuOpen);
+                setAlertsOpen(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px 10px 4px 6px',
+                borderRadius: '9999px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{ 
+                width: '28px', 
+                height: '28px', 
+                borderRadius: '50%', 
+                background: 'linear-gradient(135deg, #06b6d4, #6366f1)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontWeight: 800, 
+                color: '#ffffff', 
+                fontSize: '0.8rem',
+                boxShadow: '0 0 10px rgba(6, 182, 212, 0.4)'
+              }}>
+                Y
+              </div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ffffff' }}>Yatharth</span>
             </div>
+
+            {/* User Profile Menu Dropdown */}
+            {userMenuOpen && (
+              <div 
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '48px',
+                  width: '280px',
+                  background: 'rgba(18, 24, 36, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px'
+                }}
+              >
+                {/* User Info Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#ffffff', fontSize: '1.1rem' }}>
+                    Y
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.9rem' }}>Yatharth Singhai</p>
+                    <p style={{ fontSize: '0.75rem', color: '#06b6d4', fontWeight: 500 }}>Lead AI & Observability Engineer</p>
+                  </div>
+                </div>
+
+                {/* API Key Box */}
+                <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Key size={12} color="#06b6d4" /> API Key
+                    </span>
+                    <button
+                      onClick={handleCopyKey}
+                      style={{ background: 'none', border: 'none', color: copiedKey ? '#34d399' : '#06b6d4', fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                    >
+                      {copiedKey ? <Check size={12} /> : <Copy size={12} />}
+                      {copiedKey ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <code style={{ fontSize: '0.75rem', color: '#22d3ee', fontFamily: 'monospace' }}>dev-local-key</code>
+                </div>
+
+                {/* Quick Links */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem' }}>
+                  <a
+                    href="http://localhost:8000/docs"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ padding: '6px 8px', borderRadius: '6px', color: '#d1d5db', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <BookOpen size={14} color="#818cf8" /> Swagger OpenAPI Docs
+                    </span>
+                    <ExternalLink size={12} color="#6b7280" />
+                  </a>
+
+                  <a
+                    href="http://localhost:8000/health"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ padding: '6px 8px', borderRadius: '6px', color: '#d1d5db', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <HeartPulse size={14} color="#34d399" /> System Health Status
+                    </span>
+                    <ExternalLink size={12} color="#6b7280" />
+                  </a>
+                </div>
+
+                {/* Environment Info */}
+                <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.7rem', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Engine: DuckDB + SQLite</span>
+                  <span style={{ color: '#34d399', fontWeight: 600 }}>v1.0.0 Active</span>
+                </div>
+              </div>
+            )}
           </div>
+
         </div>
 
       </div>
