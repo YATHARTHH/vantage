@@ -38,6 +38,10 @@ async def init_db(engine: AsyncEngine | None = None) -> None:
             "ALTER TABLE alert_records ADD COLUMN threat_types_json TEXT",
             "ALTER TABLE alert_suppression_rules ADD COLUMN expires_at DATETIME",
             "ALTER TABLE alert_suppression_rules ADD COLUMN scope VARCHAR DEFAULT 'project'",
+            # local_cache_records — created via Base.metadata.create_all above
+            # These guards handle any pre-existing partial schema
+            "ALTER TABLE local_cache_records ADD COLUMN prompt_template_version VARCHAR DEFAULT 'v1'",
+            "ALTER TABLE local_cache_records ADD COLUMN context_fingerprint VARCHAR DEFAULT ''",
         ]
         for m in migrations:
             try:

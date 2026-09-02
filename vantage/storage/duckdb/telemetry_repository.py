@@ -80,6 +80,11 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
         commit_sha = getattr(payload, "commit_sha", None)
         pipeline_name = getattr(payload, "pipeline_name", None)
 
+        tags = dict(env.tags or {})
+        prompt_prev = getattr(payload, "prompt_preview", None)
+        if prompt_prev:
+            tags["prompt_preview"] = prompt_prev
+
         sec = env.security
         if isinstance(sec, dict):
             sec_scanned = sec.get("scanned", False)
@@ -128,7 +133,7 @@ class DuckDBTelemetryRepository(AbstractTelemetryRepository):
             pipeline_name,
             env.environment,
             env.owner_team,
-            json.dumps(env.tags),
+            json.dumps(tags),
             sec_scanned,
             sec_is_threat,
             sec_risk_level,

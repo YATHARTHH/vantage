@@ -6,6 +6,7 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { ExperimentsPage } from './pages/ExperimentsPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { TelemetryPage } from './pages/TelemetryPage';
+import VectorDriftExplorer from './pages/VectorDriftExplorer';
 
 export const App: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
             <Route path="/experiments" element={<ExperimentsPage />} />
             <Route path="/alerts" element={<AlertsPage />} />
             <Route path="/telemetry" element={<TelemetryPage />} />
+            <Route path="/vector-explorer" element={<VectorDriftExplorer />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
