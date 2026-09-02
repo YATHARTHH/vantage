@@ -148,3 +148,25 @@ class AlertSuppressionRuleModel(Base):
     __table_args__ = (
         sa.UniqueConstraint("project_id", "incident_key", name="uq_suppression_rule"),
     )
+
+
+class LocalCacheRecordModel(Base):
+    __tablename__ = "local_cache_records"
+
+    id: Mapped[int] = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
+    cache_id: Mapped[str] = mapped_column(sa.String, unique=True, nullable=False)
+    project_id: Mapped[str] = mapped_column(sa.String, nullable=False)
+    model_name: Mapped[str] = mapped_column(sa.String, nullable=False)
+    exact_hash: Mapped[str] = mapped_column(sa.String, nullable=False, index=True)
+    prompt_template_version: Mapped[str] = mapped_column(sa.String, default="v1")
+    context_fingerprint: Mapped[str] = mapped_column(sa.String, default="")
+    # prompt_text / response_text nullable — not stored when log_prompts=False
+    prompt_text: Mapped[Optional[str]] = mapped_column(sa.Text)
+    response_text: Mapped[Optional[str]] = mapped_column(sa.Text)
+    tokens_input: Mapped[int] = mapped_column(sa.Integer, default=0)
+    tokens_output: Mapped[int] = mapped_column(sa.Integer, default=0)
+    original_cost_usd: Mapped[float] = mapped_column(sa.Float, default=0.0)
+    hit_count: Mapped[int] = mapped_column(sa.Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow)
+    last_hit_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)

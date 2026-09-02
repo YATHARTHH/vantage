@@ -48,10 +48,10 @@ class PIIFilter:
         return envelope
 
     async def _should_log_prompts(self, project_id: str) -> bool:
-        if project_id not in self._cache:
-            project = await self._repo.get_project(project_id)
-            self._cache[project_id] = project.log_prompts if project else False
-        return self._cache[project_id]
+        project = await self._repo.get_project(project_id)
+        if project:
+            return project.log_prompts
+        return False
 
     def invalidate_cache(self, project_id: str | None = None) -> None:
         if project_id:

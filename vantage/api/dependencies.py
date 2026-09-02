@@ -17,6 +17,12 @@ from vantage.services.security_alert_service import SecurityAlertService
 require_api_key = verify_api_key
 
 
+async def get_db():
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        yield session
+
+
 @lru_cache
 def get_telemetry_repository() -> DuckDBTelemetryRepository:
     settings = get_settings()
