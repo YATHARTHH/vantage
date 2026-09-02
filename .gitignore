@@ -56,6 +56,12 @@ test_dpo_export.py
 test_production_resolution.py
 test_resolution_backend.py
 test_scan.py
+seed_vector_traces.py
+setup_project_and_seed.py
+test_all_features.py
+test_query_spans.py
+test_vector_api.py
+update_project_log_prompts.py
 
 # Adversarial dataset exports (generated at runtime, not source controlled)
 export/
