@@ -43,7 +43,7 @@ async def query_trace_tree(
 
 @router.get("/agent-cost", summary="Query aggregated agent run cost from child LLM spans")
 async def query_agent_cost(
-    project_id: str,
+    project_id: str | None = None,
     hours: int = 24,
     query_svc: QueryService = Depends(get_query_service),
 ):
