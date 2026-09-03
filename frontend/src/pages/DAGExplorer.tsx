@@ -247,53 +247,24 @@ export default function DAGExplorer() {
   });
 
   return (
-    <div style={{
-      minHeight: "calc(100vh - 65px)",
-      width: "100%",
-      maxWidth: "100vw",
-      overflowX: "hidden",
-      background: "linear-gradient(135deg, #030712 0%, #0b0f19 50%, #0f172a 100%)",
-      fontFamily: "'Inter', system-ui, sans-serif",
-      color: "#e2e8f0",
-      display: "flex",
-      flexDirection: "column",
-    }}>
-      {/* Sub-Header Bar */}
-      <div style={{
-        padding: "14px 24px",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        background: "rgba(11,15,25,0.85)",
-        backdropFilter: "blur(16px)",
-        zIndex: 20,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #a855f7, #06b6d4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18, boxShadow: "0 0 16px rgba(168,85,247,0.3)"
-          }}>🔀</div>
-          <div>
-            <div style={{ color: "#f8fafc", fontWeight: 800, fontSize: 16, letterSpacing: "-0.01em" }}>
-              Multi-Agent Execution DAG & Offline Replay
-            </div>
-            <div style={{ color: "#64748b", fontSize: 12 }}>
-              Directed Topology · Deterministic Offline Replay · Local Impact Estimator
-            </div>
-          </div>
+    <div className="page-container" style={{ minHeight: "calc(100vh - 64px)" }}>
+      {/* Universal Page Header */}
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Agent Execution DAG & Replay Engine</h2>
+          <p className="page-subtitle">
+            Directed Inter-Agent Topology · Deterministic Offline Replay · Local Impact Estimator
+          </p>
         </div>
 
         {/* Trace Selector */}
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>Select Trace:</span>
+          <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>Select Trace:</span>
           <select
             value={selectedTraceId}
             onChange={(e) => setSelectedTraceId(e.target.value)}
             style={{
-              background: "rgba(18,24,38,0.8)",
+              background: "rgba(15,23,42,0.85)",
               border: "1px solid rgba(255,255,255,0.12)",
               borderRadius: 8,
               padding: "8px 14px",
@@ -301,7 +272,7 @@ export default function DAGExplorer() {
               fontSize: 13,
               outline: "none",
               cursor: "pointer",
-              minWidth: 280,
+              minWidth: 260,
             }}
           >
             {traces.map((t) => (
@@ -314,16 +285,7 @@ export default function DAGExplorer() {
           <button
             onClick={fetchGraph}
             disabled={loading}
-            style={{
-              background: "linear-gradient(135deg, #a855f7, #06b6d4)",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 16px",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
+            className="glass-button"
           >
             {loading ? "Loading…" : "Refresh Graph"}
           </button>

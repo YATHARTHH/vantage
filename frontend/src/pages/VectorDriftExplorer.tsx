@@ -395,38 +395,14 @@ export default function VectorDriftExplorer() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
-    <div style={{
-      position: "relative",
-      minHeight: "calc(100vh - 65px)",
-      height: "calc(100vh - 65px)",
-      background: "linear-gradient(135deg, #030712 0%, #0b0f19 50%, #0f172a 100%)",
-      fontFamily: "'Inter', system-ui, sans-serif",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-    }}>
-      {/* Sub-Header Control Bar */}
-      <div style={{
-        padding: "12px 24px",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        background: "rgba(10,12,26,0.85)",
-        backdropFilter: "blur(12px)",
-        zIndex: 30,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg, #7c3aed, #06b6d4)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18,
-          }}>🌌</div>
-          <div>
-            <div style={{ color: "#e2e8f0", fontWeight: 800, fontSize: 16 }}>3D Vector Drift Explorer</div>
-            <div style={{ color: "#475569", fontSize: 12 }}>TF-IDF · TruncatedSVD · Centroid Distribution Shift</div>
-          </div>
+    <div className="page-container" style={{ position: "relative", minHeight: "calc(100vh - 64px)", height: "calc(100vh - 64px)" }}>
+      {/* Universal Page Header */}
+      <div className="page-header" style={{ position: "relative", zIndex: 30 }}>
+        <div>
+          <h2 className="page-title">3D Latent Vector Space & Drift Explorer</h2>
+          <p className="page-subtitle">
+            TF-IDF · TruncatedSVD Projections · Baseline vs Candidate Centroid Shift
+          </p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <input
