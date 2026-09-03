@@ -170,3 +170,14 @@ class LocalCacheRecordModel(Base):
     created_at: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow)
     last_hit_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
     expires_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
+
+
+class ProjectPolicyModel(Base):
+    __tablename__ = "project_policies"
+
+    project_id: Mapped[str] = mapped_column(sa.String, primary_key=True)
+    max_cost_per_trace_usd: Mapped[float] = mapped_column(sa.Float, default=0.50)
+    max_tokens_per_trace: Mapped[int] = mapped_column(sa.Integer, default=30000)
+    max_retry_loops: Mapped[int] = mapped_column(sa.Integer, default=3)
+    enabled: Mapped[bool] = mapped_column(sa.Boolean, default=True)
+    updated_at: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow)

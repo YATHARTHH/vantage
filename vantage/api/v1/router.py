@@ -7,6 +7,8 @@ from vantage.api.v1.projects import router as projects_router
 from vantage.api.v1.query import router as query_router
 from vantage.api.v1.registry import router as registry_router
 
+from vantage.api.v1.policy import router as policy_router
+
 api_v1_router = APIRouter()
 api_v1_router.include_router(ingest_router)
 api_v1_router.include_router(projects_router)
@@ -15,3 +17,4 @@ api_v1_router.include_router(query_router)
 api_v1_router.include_router(registry_router)
 api_v1_router.include_router(cache_router)
 api_v1_router.include_router(analytics_router)
+api_v1_router.include_router(policy_router)
