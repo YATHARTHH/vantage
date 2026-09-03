@@ -249,6 +249,9 @@ export default function DAGExplorer() {
   return (
     <div style={{
       minHeight: "calc(100vh - 65px)",
+      width: "100%",
+      maxWidth: "100vw",
+      overflowX: "hidden",
       background: "linear-gradient(135deg, #030712 0%, #0b0f19 50%, #0f172a 100%)",
       fontFamily: "'Inter', system-ui, sans-serif",
       color: "#e2e8f0",
