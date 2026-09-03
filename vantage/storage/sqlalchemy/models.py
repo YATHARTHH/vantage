@@ -181,3 +181,33 @@ class ProjectPolicyModel(Base):
     max_retry_loops: Mapped[int] = mapped_column(sa.Integer, default=3)
     enabled: Mapped[bool] = mapped_column(sa.Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow)
+
+
+class ApiKeyModel(Base):
+    __tablename__ = "api_keys"
+
+    key_id: Mapped[str] = mapped_column(sa.String, primary_key=True)
+    key_hash: Mapped[str] = mapped_column(sa.String, unique=True, nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(sa.String, nullable=False)
+    role: Mapped[str] = mapped_column(sa.String, nullable=False, default="developer")  # admin | developer | viewer
+    project_id: Mapped[Optional[str]] = mapped_column(sa.String)  # Optional scope
+    status: Mapped[str] = mapped_column(sa.String, default="active")  # active | revoked
+    created_at: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
+    last_used_at: Mapped[Optional[datetime]] = mapped_column(sa.DateTime)
+
+
+class AuditLogModel(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[int] = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
+    timestamp: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.utcnow, index=True)
+    actor_key_id: Mapped[str] = mapped_column(sa.String, nullable=False)
+    project_id: Mapped[Optional[str]] = mapped_column(sa.String, index=True)
+    action: Mapped[str] = mapped_column(sa.String, nullable=False)
+    resource_type: Mapped[str] = mapped_column(sa.String, nullable=False)
+    resource_id: Mapped[Optional[str]] = mapped_column(sa.String)
+    details_json: Mapped[Optional[str]] = mapped_column(sa.Text)
+    previous_hash: Mapped[str] = mapped_column(sa.String, nullable=False)
+    record_hash: Mapped[str] = mapped_column(sa.String, nullable=False)

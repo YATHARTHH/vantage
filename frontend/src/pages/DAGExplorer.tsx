@@ -462,10 +462,76 @@ export default function DAGExplorer() {
                       {nodeDetail.payload_preview}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 12, color: "#64748b", italic: "true" }}>
+                    <div style={{ fontSize: 12, color: "#64748b", fontStyle: "italic" }}>
                       No prompt preview stored for this span.
                     </div>
                   )}
+                </div>
+
+                {/* Offline Replay & What-If Buttons */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await axios.post(`/api/v1/replay/trace/${selectedTraceId}`, {}, { headers });
+                        alert(`Replay Status: ${res.data.status}\nExecuted Nodes: ${res.data.executed_nodes_count}\nCost: $0.00 (Offline Mocked)`);
+                      } catch (err: any) {
+                        alert(err.response?.data?.detail || "Replay failed");
+                      }
+                    }}
+                    style={{
+                      background: "rgba(168,85,247,0.15)",
+                      border: "1px solid #a855f7",
+                      color: "#c084fc",
+                      borderRadius: 8,
+                      padding: "8px 12px",
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    ⏳ Trigger Offline Replay
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const candidate = prompt("Enter candidate modified prompt text for What-If estimation:", nodeDetail.payload_preview || "");
+                      if (candidate) {
+                        axios.post('/api/v1/replay/what-if', {
+                          trace_id: selectedTraceId,
+                          modified_prompts: { [nodeDetail.span_id]: candidate }
+                        }, { headers }).then(res => {
+                          const d = res.data;
+                          alert(
+                            `Local Estimated Impact:\n\n` +
+                            `Faithfulness Delta: ${d.delta.faithfulness}\n` +
+                            `Security Risk Delta: ${d.delta.security_risk}\n\n` +
+                            `Disclaimer: ${d.disclaimer}`
+                          );
+                        }).catch(err => alert(err.response?.data?.detail || "What-If failed"));
+                      }
+                    }}
+                    style={{
+                      background: "rgba(34,211,238,0.15)",
+                      border: "1px solid #22d3ee",
+                      color: "#67e8f9",
+                      borderRadius: 8,
+                      padding: "8px 12px",
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    🔮 Evaluate What-If Prompt
+                  </button>
                 </div>
               </>
             ) : null}

@@ -14,7 +14,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from vantage.api.dependencies import get_db, verify_api_key, get_telemetry_repository, get_metadata_repository
+from vantage.api.dependencies import (
+    get_telemetry_repository,
+    get_metadata_repository,
+    verify_api_key,
+)
+from vantage.auth.rbac import RequirePermission, AuthContext
 from vantage.analytics.vector_drift import compute_vector_drift
 from vantage.analytics.dag_builder import build_dag_from_spans, DAGGraph
 from vantage.storage.duckdb.telemetry_repository import DuckDBTelemetryRepository
@@ -158,7 +163,7 @@ async def list_dag_traces(
     project_id: Optional[str] = Query(None, description="Filter by project ID"),
     limit: int = Query(50, ge=1, le=200),
     telemetry_repo: DuckDBTelemetryRepository = Depends(get_telemetry_repository),
-    _: str = Depends(verify_api_key),
+    auth: AuthContext = Depends(RequirePermission("dag.read")),
 ):
     """Returns recent trace IDs that contain multiple spans (span_count >= 2)."""
     spans = await telemetry_repo.query_spans(project_id=project_id, limit=2000)
@@ -197,7 +202,7 @@ async def list_dag_traces(
 async def get_dag_graph(
     trace_id: str,
     telemetry_repo: DuckDBTelemetryRepository = Depends(get_telemetry_repository),
-    _: str = Depends(verify_api_key),
+    auth: AuthContext = Depends(RequirePermission("dag.read")),
 ):
     """Constructs light execution graph topology for the specified trace ID."""
     spans = await telemetry_repo.query_spans(trace_id=trace_id, limit=500)
