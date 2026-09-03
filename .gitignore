@@ -59,6 +59,7 @@ test_scan.py
 seed_vector_traces.py
 setup_project_and_seed.py
 seed_second_project.py
+seed_dag_trace.py
 test_all_features.py
 test_query_spans.py
 test_vector_api.py

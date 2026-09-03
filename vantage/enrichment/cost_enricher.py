@@ -12,18 +12,30 @@ class CostEnricher:
     Loads from model_prices.json once at application startup.
     """
 
-    def __init__(self, prices_path: Path):
+    def __init__(self, prices_path: Path | str | None = None):
         self._prices: dict[str, dict] = {}
-        self._load(prices_path)
+        target_path = Path(prices_path) if prices_path else Path("vantage/data/model_prices.json")
+        self._load(target_path)
 
     def _load(self, path: Path) -> None:
         if not path.exists():
             logger.warning("model_prices_not_found", path=str(path))
             return
-        raw = json.loads(path.read_text())
-        # Filter out metadata top-level key if present
-        self._prices = {k: v for k, v in raw.items() if not k.startswith("_")}
-        logger.info("pricing_loaded", count=len(self._prices), path=str(path))
+        try:
+            raw = json.loads(path.read_text())
+            self._prices = {k: v for k, v in raw.items() if not k.startswith("_")}
+            logger.info("pricing_loaded", count=len(self._prices), path=str(path))
+        except Exception:
+            pass
+
+    def calculate_cost(self, model_name: str, prompt_tokens: int, completion_tokens: int) -> float:
+        cost = self.compute(model_name, prompt_tokens, completion_tokens)
+        if cost is not None:
+            return round(cost, 6)
+        # Default fallback pricing for standard models (e.g. gpt-4o rates: $2.50 / 1M in, $10.00 / 1M out)
+        in_rate = 0.0000025
+        out_rate = 0.000010
+        return round((prompt_tokens * in_rate) + (completion_tokens * out_rate), 6)
 
     def compute(self, model: str, tokens_in: int | None, tokens_out: int | None) -> float | None:
         if not model or tokens_in is None or tokens_out is None:

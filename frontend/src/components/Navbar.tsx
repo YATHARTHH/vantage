@@ -212,6 +212,25 @@ export const Navbar: React.FC = () => {
           </NavLink>
 
           <NavLink
+            to="/dag-explorer"
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: isActive ? '#ffffff' : '#9ca3af',
+              background: isActive ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+              border: isActive ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid transparent',
+              transition: 'all 0.2s ease',
+            })}
+          >
+            🔀 Agent DAG
+          </NavLink>
+
+          <NavLink
             to="/vector-explorer"
             style={({ isActive }) => ({
               display: 'flex',
