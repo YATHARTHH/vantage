@@ -57,14 +57,41 @@ export const ProjectsPage: React.FC = () => {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h2 className="page-title">Registered Projects</h2>
+          <h2 className="page-title">Registered Telemetry Projects</h2>
           <p className="page-subtitle">
-            Telemetry identity mapping and source connector configurations.
+            W3C OpenTelemetry OTLP Ingestion Endpoint & In-Flight PII Redaction Policies
           </p>
         </div>
         <button className="glass-button" onClick={() => setShowModal(true)}>
           <Plus size={16} /> Register Project
         </button>
+      </div>
+
+      {/* OTLP / PII Hardening Status Banner */}
+      <div style={{
+        background: "rgba(15,23,42,0.85)", border: "1px solid rgba(99,102,241,0.25)",
+        borderRadius: 14, padding: "16px 20px", marginBottom: 24, display: "flex",
+        alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(12px)"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 10, background: "rgba(99,102,241,0.15)",
+            border: "1px solid rgba(99,102,241,0.3)", display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#818cf8", fontSize: 18
+          }}>📡</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc" }}>
+              OTLP/HTTP Receiver: <code style={{ color: "#38bdf8", background: "rgba(0,0,0,0.3)", padding: "2px 8px", borderRadius: 4 }}>POST /v1/traces</code>
+            </div>
+            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+              Supports OpenTelemetry GenAI Conventions · Gzip Decompression · In-Flight Luhn PII Redaction
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <span className="badge badge-indigo">🔒 Luhn PII Scrubbing Active</span>
+          <span className="badge badge-emerald">⚡ Bounded Buffer DLQ</span>
+        </div>
       </div>
 
       {loading ? (
