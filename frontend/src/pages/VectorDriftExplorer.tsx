@@ -263,7 +263,7 @@ function DriftBanner({ metrics }: { metrics: DriftMetrics }) {
   return (
     <div style={{
       position: "absolute",
-      top: 16,
+      top: 72,
       left: "50%",
       transform: "translateX(-50%)",
       background: cfg.bg,
@@ -396,23 +396,25 @@ export default function VectorDriftExplorer() {
 
   return (
     <div style={{
-      position: "fixed",
-      inset: 0,
+      position: "relative",
+      minHeight: "calc(100vh - 65px)",
+      height: "calc(100vh - 65px)",
       background: "linear-gradient(135deg, #020617 0%, #0a0c1a 50%, #0d0a1a 100%)",
       fontFamily: "'Inter', system-ui, sans-serif",
       display: "flex",
       flexDirection: "column",
+      overflow: "hidden",
     }}>
-      {/* Header */}
+      {/* Sub-Header Control Bar */}
       <div style={{
-        padding: "14px 24px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "12px 24px",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        background: "rgba(10,12,26,0.6)",
+        background: "rgba(10,12,26,0.85)",
         backdropFilter: "blur(12px)",
-        zIndex: 20,
+        zIndex: 30,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
