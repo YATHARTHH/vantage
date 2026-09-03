@@ -50,6 +50,55 @@ a {
   text-decoration: none;
 }
 
+/* Custom Dark Obsidian WebKit Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(3, 7, 18, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+  background-clip: content-box;
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.8);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Universal Page Layout Shell */
 .page-container {
   max-width: 1400px;
@@ -59,6 +108,7 @@ a {
   min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .page-header {
@@ -95,6 +145,25 @@ a {
 
 .glass-panel:hover {
   border-color: var(--border-hover);
+}
+
+/* Glass Form Inputs & Controls */
+.glass-input, .glass-select {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus, .glass-select:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.2);
+  background: rgba(15, 23, 42, 0.95);
 }
 
 /* Buttons */
@@ -179,4 +248,5 @@ a {
   justify-content: center;
   z-index: 100;
   padding: 24px;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

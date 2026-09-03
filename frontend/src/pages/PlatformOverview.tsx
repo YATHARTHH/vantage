@@ -192,19 +192,8 @@ export const PlatformOverview: React.FC = () => {
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              style={{
-                background: 'var(--bg-glass)',
-                color: '#ffffff',
-                border: '1px solid var(--border-glass)',
-                padding: '8px 36px 8px 16px',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                outline: 'none',
-                appearance: 'none',
-                backdropFilter: 'blur(16px)'
-              }}
+              className="glass-select"
+              style={{ paddingRight: '36px', appearance: 'none', cursor: 'pointer' }}
             >
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.display_name} ({p.id})</option>
