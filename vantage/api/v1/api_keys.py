@@ -61,6 +61,7 @@ class ApiKeyListItem(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.post("", response_model=CreateApiKeyResponse, summary="Create new enterprise API Key")
+@router.post("/", response_model=CreateApiKeyResponse, include_in_schema=False)
 async def create_api_key(
     req: CreateApiKeyRequest,
     db: AsyncSession = Depends(get_db),
@@ -118,6 +119,7 @@ async def create_api_key(
 
 
 @router.get("", response_model=list[ApiKeyListItem], summary="List enterprise API Keys")
+@router.get("/", response_model=list[ApiKeyListItem], include_in_schema=False)
 async def list_api_keys(
     project_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
