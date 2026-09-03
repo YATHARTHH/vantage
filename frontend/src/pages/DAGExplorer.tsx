@@ -263,17 +263,8 @@ export default function DAGExplorer() {
           <select
             value={selectedTraceId}
             onChange={(e) => setSelectedTraceId(e.target.value)}
-            style={{
-              background: "rgba(15,23,42,0.85)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 8,
-              padding: "8px 14px",
-              color: "#f8fafc",
-              fontSize: 13,
-              outline: "none",
-              cursor: "pointer",
-              minWidth: 260,
-            }}
+            className="glass-select"
+            style={{ cursor: "pointer", minWidth: 260 }}
           >
             {traces.map((t) => (
               <option key={t.trace_id} value={t.trace_id} style={{ background: "#0f172a", color: "#e2e8f0" }}>

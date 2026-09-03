@@ -409,16 +409,8 @@ export default function VectorDriftExplorer() {
             placeholder="Filter by project ID..."
             value={projectId}
             onChange={e => setProjectId(e.target.value)}
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8,
-              padding: "7px 14px",
-              color: "#e2e8f0",
-              fontSize: 13,
-              outline: "none",
-              width: 200,
-            }}
+            className="glass-input"
+            style={{ width: 200 }}
           />
           <button
             onClick={fetchData}

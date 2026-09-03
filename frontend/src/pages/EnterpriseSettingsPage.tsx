@@ -181,10 +181,8 @@ export default function EnterpriseSettingsPage() {
                   placeholder="e.g. Production Ingestion Agent"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  style={{
-                    background: "rgba(18,24,38,0.8)", border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 8, padding: "9px 14px", color: "#fff", fontSize: 13, width: 240, outline: "none"
-                  }}
+                  className="glass-input"
+                  style={{ width: 240 }}
                 />
               </div>
 
@@ -193,10 +191,8 @@ export default function EnterpriseSettingsPage() {
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  style={{
-                    background: "rgba(18,24,38,0.8)", border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 8, padding: "9px 14px", color: "#fff", fontSize: 13, width: 150, outline: "none"
-                  }}
+                  className="glass-select"
+                  style={{ width: 150 }}
                 >
                   <option value="developer" style={{ background: "#0f172a" }}>Developer</option>
                   <option value="viewer" style={{ background: "#0f172a" }}>Viewer</option>
@@ -211,10 +207,8 @@ export default function EnterpriseSettingsPage() {
                   placeholder="e.g. search-v2 (blank = global)"
                   value={projectScope}
                   onChange={(e) => setProjectScope(e.target.value)}
-                  style={{
-                    background: "rgba(18,24,38,0.8)", border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 8, padding: "9px 14px", color: "#fff", fontSize: 13, width: 230, outline: "none"
-                  }}
+                  className="glass-input"
+                  style={{ width: 230 }}
                 />
               </div>
 
