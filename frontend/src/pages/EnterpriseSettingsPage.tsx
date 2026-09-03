@@ -111,33 +111,14 @@ export default function EnterpriseSettingsPage() {
   };
 
   return (
-    <div style={{
-      minHeight: "calc(100vh - 65px)",
-      width: "100%",
-      maxWidth: "100vw",
-      overflowX: "hidden",
-      background: "linear-gradient(135deg, #030712 0%, #0b0f19 50%, #0f172a 100%)",
-      fontFamily: "'Inter', system-ui, sans-serif",
-      color: "#e2e8f0",
-      padding: "28px 36px",
-    }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: "linear-gradient(135deg, #6366f1, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-            boxShadow: "0 0 24px rgba(99,102,241,0.35)", color: "#fff"
-          }}>⚙️</div>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
-              Enterprise Security & Compliance Control
-            </div>
-            <div style={{ fontSize: 13, color: "#64748b" }}>
-              Scoped API Keys · Permission Role Matrix · Cryptographic Hash Chain Audit
-            </div>
-          </div>
+    <div className="page-container">
+      {/* Universal Page Header */}
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Enterprise Security & Compliance Control</h2>
+          <p className="page-subtitle">
+            Scoped API Keys · Permission Role Matrix · Cryptographic Hash Chain Audit Log
+          </p>
         </div>
       </div>
 
