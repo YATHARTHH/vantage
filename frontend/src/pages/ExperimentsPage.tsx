@@ -37,12 +37,14 @@ export const ExperimentsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Experiment Registry</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
-          Link model hyper-parameters, datasets, accuracy benchmarks, and cost outcomes directly to production telemetry.
-        </p>
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Experiment Registry</h2>
+          <p className="page-subtitle">
+            Link model hyper-parameters, datasets, accuracy benchmarks, and cost outcomes directly to production telemetry.
+          </p>
+        </div>
       </div>
 
       {loading ? (
