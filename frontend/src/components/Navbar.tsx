@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   GitBranch,
   Box,
-  SlidersHorizontal,
   Lock
 } from 'lucide-react';
 import { VantageAPI, AlertRecord } from '../api/client';
@@ -82,15 +81,15 @@ export const Navbar: React.FC = () => {
         maxWidth: '1440px',
         width: '100%',
         margin: '0 auto',
-        padding: '0 24px',
+        padding: '0 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '16px',
+        gap: '12px',
       }}>
         
-        {/* Left Brand + Global Search Group */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        {/* Left Brand + Global Search Group (Fixed, Never Shrinks) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
           {/* Logo & Brand Name */}
           <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
             <div style={{ 
@@ -131,11 +130,11 @@ export const Navbar: React.FC = () => {
           <div style={{ width: '1px', height: '22px', background: 'rgba(255, 255, 255, 0.1)' }} />
 
           {/* Global Search Bar */}
-          <div style={{ position: 'relative', width: searchFocused ? '280px' : '230px', transition: 'all 0.25s ease' }}>
+          <div style={{ position: 'relative', width: searchFocused ? '240px' : '190px', transition: 'all 0.25s ease' }}>
             <Search size={14} color={searchFocused ? '#38bdf8' : '#64748b'} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', transition: 'color 0.2s ease' }} />
             <input
               type="text"
-              placeholder="Search traces, models, keys..."
+              placeholder="Search traces, models..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
@@ -145,7 +144,7 @@ export const Navbar: React.FC = () => {
                 background: searchFocused ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.04)',
                 border: searchFocused ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '8px',
-                padding: '7px 34px 7px 34px',
+                padding: '7px 32px 7px 34px',
                 color: '#f8fafc',
                 fontSize: '0.8rem',
                 outline: 'none',
@@ -170,8 +169,17 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Navigation Links */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        {/* Center Navigation Links (Flex 1, Responsive Scroll) */}
+        <nav style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          flex: 1,
+          minWidth: 0,
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}>
           <NavLink
             to="/"
             end
@@ -179,10 +187,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(99, 102, 241, 0.35)' : '1px solid transparent',
@@ -190,7 +199,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <LayoutDashboard size={15} />
+            <LayoutDashboard size={14} />
             Overview
           </NavLink>
 
@@ -200,10 +209,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(99, 102, 241, 0.35)' : '1px solid transparent',
@@ -211,7 +221,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <Layers size={15} />
+            <Layers size={14} />
             Projects
           </NavLink>
 
@@ -221,10 +231,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(168, 85, 247, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(168, 85, 247, 0.35)' : '1px solid transparent',
@@ -232,7 +243,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <GitBranch size={15} />
+            <GitBranch size={14} />
             Agent DAG
           </NavLink>
 
@@ -242,10 +253,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(6, 182, 212, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid transparent',
@@ -253,7 +265,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <Box size={15} />
+            <Box size={14} />
             Vectors
           </NavLink>
 
@@ -263,10 +275,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(239, 68, 68, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid transparent',
@@ -274,7 +287,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <AlertTriangle size={15} />
+            <AlertTriangle size={14} />
             Alerts
           </NavLink>
 
@@ -284,10 +297,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(99, 102, 241, 0.35)' : '1px solid transparent',
@@ -295,7 +309,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <Activity size={15} />
+            <Activity size={14} />
             Agent Cost
           </NavLink>
 
@@ -305,10 +319,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(99, 102, 241, 0.35)' : '1px solid transparent',
@@ -316,7 +331,7 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <TestTube2 size={15} />
+            <TestTube2 size={14} />
             Experiments
           </NavLink>
 
@@ -326,10 +341,11 @@ export const Navbar: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '6px 10px',
               borderRadius: '7px',
               fontWeight: 600,
-              fontSize: '0.825rem',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap',
               color: isActive ? '#f8fafc' : '#94a3b8',
               background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
               border: isActive ? '1px solid rgba(99, 102, 241, 0.35)' : '1px solid transparent',
@@ -337,13 +353,13 @@ export const Navbar: React.FC = () => {
               textDecoration: 'none',
             })}
           >
-            <Lock size={15} />
+            <Lock size={14} />
             Enterprise
           </NavLink>
         </nav>
 
-        {/* Right Header Interactive Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Right Actions Group (Fixed, Never Shrinks, Always 100% Accessible) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           
           {/* Grafana External Button */}
           <a
@@ -390,6 +406,7 @@ export const Navbar: React.FC = () => {
               }}
             >
               <Bell size={14} color={alerts.length > 0 ? '#ef4444' : '#94a3b8'} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f8fafc' }}>Alerts</span>
               {alerts.length > 0 && (
                 <span style={{
                   background: '#ef4444',
@@ -475,7 +492,7 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* User Profile Avatar Avatar */}
+          {/* User Profile Avatar Avatar (Yatharth) */}
           <div style={{ position: 'relative' }}>
             <div
               onClick={() => {
@@ -486,10 +503,10 @@ export const Navbar: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '3px 8px 3px 4px',
+                padding: '4px 10px 4px 5px',
                 borderRadius: '9999px',
                 background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease'
               }}
