@@ -86,6 +86,17 @@ export interface AgentRunCost {
   status: string;
 }
 
+export interface WebhookSubscription {
+  webhook_id: string;
+  display_name: string;
+  endpoint_url: string;
+  secret: string;
+  project_id?: string;
+  provider: string;
+  status: string;
+  created_at: string;
+}
+
 export const VantageAPI = {
   // Projects
   getProjects: async (): Promise<Project[]> => {
@@ -136,6 +147,21 @@ export const VantageAPI = {
   // Telemetry & Agent Cost
   getAgentCost: async (projectId: string): Promise<AgentRunCost[]> => {
     const res = await api.get(`/query/agent-cost?project_id=${projectId}`);
+    return res.data;
+  },
+
+  // Enterprise Webhooks
+  getWebhooks: async (projectId?: string): Promise<WebhookSubscription[]> => {
+    const url = projectId ? `/webhooks?project_id=${projectId}` : '/webhooks';
+    const res = await api.get(url);
+    return res.data;
+  },
+  createWebhook: async (data: { display_name: string; endpoint_url: string; provider?: string; project_id?: string }): Promise<WebhookSubscription> => {
+    const res = await api.post('/webhooks', data);
+    return res.data;
+  },
+  revokeWebhook: async (webhookId: string): Promise<{ status: string; webhook_id: string }> => {
+    const res = await api.delete(`/webhooks/${webhookId}`);
     return res.data;
   },
 };

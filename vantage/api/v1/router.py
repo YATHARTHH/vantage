@@ -11,6 +11,8 @@ from vantage.api.v1.policy import router as policy_router
 from vantage.api.v1.api_keys import router as api_keys_router
 from vantage.api.v1.audit import router as audit_router
 from vantage.api.v1.replay import router as replay_router
+from vantage.api.v1.otlp import router as otlp_router
+from vantage.api.v1.webhooks import router as webhooks_router
 
 api_v1_router = APIRouter()
 api_v1_router.include_router(ingest_router)
@@ -24,3 +26,5 @@ api_v1_router.include_router(policy_router)
 api_v1_router.include_router(api_keys_router)
 api_v1_router.include_router(audit_router)
 api_v1_router.include_router(replay_router)
+api_v1_router.include_router(otlp_router)
+api_v1_router.include_router(webhooks_router)

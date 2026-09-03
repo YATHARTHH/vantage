@@ -35,9 +35,49 @@ interface AuditLogResponse {
 }
 
 export default function EnterpriseSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"api_keys" | "roles" | "audit">("api_keys");
+  const [activeTab, setActiveTab] = useState<"api_keys" | "webhooks" | "roles" | "audit">("api_keys");
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
   const [auditData, setAuditData] = useState<AuditLogResponse | null>(null);
+  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [whName, setWhName] = useState("");
+  const [whUrl, setWhUrl] = useState("");
+  const [whProvider, setWhProvider] = useState("generic");
+  const [whNewSecret, setWhNewSecret] = useState<string | null>(null);
+
+  const fetchWebhooks = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/webhooks`, { headers });
+      setWebhooks(res.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleCreateWebhook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`${API_BASE}/webhooks`, {
+        display_name: whName,
+        endpoint_url: whUrl,
+        provider: whProvider,
+      }, { headers });
+      setWhNewSecret(res.data.secret);
+      setWhName(""); setWhUrl("");
+      fetchWebhooks();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to create webhook subscription");
+    }
+  };
+
+  const handleRevokeWebhook = async (id: string) => {
+    if (!confirm("Revoke this webhook subscription?")) return;
+    try {
+      await axios.delete(`${API_BASE}/webhooks/${id}`, { headers });
+      fetchWebhooks();
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    if (activeTab === "webhooks") fetchWebhooks();
+  }, [activeTab]);
   const [loading, setLoading] = useState(false);
 
   // Form State
@@ -135,6 +175,18 @@ export default function EnterpriseSettingsPage() {
           }}
         >
           🔑 API Keys
+        </button>
+        <button
+          onClick={() => setActiveTab("webhooks")}
+          style={{
+            background: activeTab === "webhooks" ? "rgba(56,189,248,0.18)" : "transparent",
+            border: activeTab === "webhooks" ? "1px solid #38bdf8" : "1px solid transparent",
+            color: activeTab === "webhooks" ? "#f8fafc" : "#94a3b8",
+            borderRadius: 8, padding: "9px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer",
+            transition: "all 0.2s ease"
+          }}
+        >
+          🔔 Webhooks & Notifications
         </button>
         <button
           onClick={() => setActiveTab("roles")}
@@ -295,6 +347,101 @@ export default function EnterpriseSettingsPage() {
                           }}
                         >
                           Soft Revoke
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : activeTab === "webhooks" ? (
+        /* Webhooks & Notifications Tab */
+        <div>
+          {/* Create Webhook Form */}
+          <div style={{
+            background: "rgba(11,15,25,0.85)", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 14, padding: 24, marginBottom: 28, backdropFilter: "blur(16px)"
+          }}>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 800 }}>Register Webhook Push Endpoint</h3>
+            <form onSubmit={handleCreateWebhook} style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 6 }}>SUBSCRIPTION NAME</label>
+                <input
+                  type="text" required placeholder="e.g. Production Slack Alert Webhook"
+                  value={whName} onChange={(e) => setWhName(e.target.value)}
+                  className="glass-input" style={{ width: 260 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 6 }}>TARGET ENDPOINT URL (SSRF FIREWALL PROTECTED)</label>
+                <input
+                  type="url" required placeholder="https://hooks.slack.com/services/..."
+                  value={whUrl} onChange={(e) => setWhUrl(e.target.value)}
+                  className="glass-input" style={{ width: 340 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 6 }}>PROVIDER FORMATTER</label>
+                <select value={whProvider} onChange={(e) => setWhProvider(e.target.value)} className="glass-select" style={{ width: 140 }}>
+                  <option value="generic" style={{ background: "#0f172a" }}>Generic JSON</option>
+                  <option value="slack" style={{ background: "#0f172a" }}>Slack</option>
+                  <option value="teams" style={{ background: "#0f172a" }}>MS Teams</option>
+                  <option value="pagerduty" style={{ background: "#0f172a" }}>PagerDuty</option>
+                </select>
+              </div>
+              <button type="submit" className="glass-button">
+                Register Webhook
+              </button>
+            </form>
+
+            {/* Secret Created Banner */}
+            {whNewSecret && (
+              <div style={{ marginTop: 20, padding: 16, background: "rgba(56,189,248,0.1)", border: "1px solid #38bdf8", borderRadius: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#38bdf8", marginBottom: 6 }}>
+                  🔑 HMAC SIGNING SECRET (SHOWN ONCE)
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 13, color: "#f8fafc", wordBreak: "break-all" }}>
+                  {whNewSecret}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Webhooks Table */}
+          <div style={{ background: "rgba(11,15,25,0.85)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 24 }}>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 800 }}>Active Webhook Subscriptions</h3>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", color: "#64748b", textAlign: "left" }}>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>ID</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>NAME</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>ENDPOINT URL</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>PROVIDER</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>STATUS</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {webhooks.map((w) => (
+                  <tr key={w.webhook_id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: 12, fontFamily: "monospace", color: "#94a3b8" }}>{w.webhook_id}</td>
+                    <td style={{ padding: 12, fontWeight: 600, color: "#f8fafc" }}>{w.display_name}</td>
+                    <td style={{ padding: 12, fontFamily: "monospace", color: "#38bdf8" }}>{w.endpoint_url}</td>
+                    <td style={{ padding: 12 }}><span className="badge badge-indigo">{w.provider}</span></td>
+                    <td style={{ padding: 12 }}>
+                      <span style={{ color: w.status === "active" ? "#22c55e" : "#ef4444", fontWeight: 800, fontSize: 12 }}>
+                        {w.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style={{ padding: 12 }}>
+                      {w.status === "active" && (
+                        <button
+                          onClick={() => handleRevokeWebhook(w.webhook_id)}
+                          style={{ background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", color: "#f87171", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                        >
+                          Revoke
                         </button>
                       )}
                     </td>
