@@ -131,12 +131,13 @@ export default function DAGExplorer() {
   useEffect(() => {
     axios.get<TraceListItem[]>(`${API_BASE}/analytics/dag/traces`, { headers })
       .then((res) => {
-        setTraces(res.data);
-        if (res.data.length > 0) {
-          setSelectedTraceId(res.data[0].trace_id);
+        const traceList = Array.isArray(res.data) ? res.data : [];
+        setTraces(traceList);
+        if (traceList.length > 0) {
+          setSelectedTraceId(traceList[0].trace_id);
         }
       })
-      .catch(() => {});
+      .catch(() => setTraces([]));
   }, []);
 
   // Fetch DAG topology graph
@@ -147,7 +148,7 @@ export default function DAGExplorer() {
     setNodeDetail(null);
     try {
       const res = await axios.get<DAGGraphData>(`${API_BASE}/analytics/dag/${selectedTraceId}`, { headers });
-      setGraph(res.data);
+      setGraph(res.data && Array.isArray(res.data.nodes) ? res.data : null);
     } catch {
       setGraph(null);
     } finally {

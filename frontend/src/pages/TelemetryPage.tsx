@@ -11,9 +11,10 @@ export const TelemetryPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await VantageAPI.getAgentCost(projectId);
-      setRuns(data);
+      setRuns(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load agent runs:', err);
+      setRuns([]);
     } finally {
       setLoading(false);
     }
@@ -23,8 +24,9 @@ export const TelemetryPage: React.FC = () => {
     loadAgentRuns();
   }, [projectId]);
 
-  const totalSpend = runs.reduce((acc, r) => acc + r.total_cost_usd, 0);
-  const totalTokens = runs.reduce((acc, r) => acc + r.tokens_input + r.tokens_output, 0);
+  const safeRuns = Array.isArray(runs) ? runs : [];
+  const totalSpend = safeRuns.reduce((acc, r) => acc + (r.total_cost_usd || 0), 0);
+  const totalTokens = safeRuns.reduce((acc, r) => acc + (r.tokens_input || 0) + (r.tokens_output || 0), 0);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>

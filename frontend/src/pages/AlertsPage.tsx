@@ -10,9 +10,10 @@ export const AlertsPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await VantageAPI.getAlerts(false);
-      setAlerts(data);
+      setAlerts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load alerts:', err);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
