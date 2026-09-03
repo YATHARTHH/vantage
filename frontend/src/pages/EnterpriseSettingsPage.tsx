@@ -50,16 +50,22 @@ export default function EnterpriseSettingsPage() {
   const fetchKeys = () => {
     setLoading(true);
     axios.get<ApiKeyItem[]>(`${API_BASE}/api-keys`, { headers })
-      .then((res) => setApiKeys(res.data))
-      .catch(() => {})
+      .then((res) => setApiKeys(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setApiKeys([]))
       .finally(() => setLoading(false));
   };
 
   const fetchAuditLogs = () => {
     setLoading(true);
     axios.get<AuditLogResponse>(`${API_BASE}/audit/logs`, { headers })
-      .then((res) => setAuditData(res.data))
-      .catch(() => {})
+      .then((res) => {
+        if (res.data && Array.isArray(res.data.logs)) {
+          setAuditData(res.data);
+        } else {
+          setAuditData({ total_logs: 0, chain_valid: true, chain_errors: [], logs: [] });
+        }
+      })
+      .catch(() => setAuditData({ total_logs: 0, chain_valid: true, chain_errors: [], logs: [] }))
       .finally(() => setLoading(false));
   };
 

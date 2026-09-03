@@ -62,15 +62,21 @@ export const PlatformOverview: React.FC = () => {
         VantageAPI.getAlerts(true),
         VantageAPI.getAgentCost(selectedProjectId)
       ]);
-      setProjects(projectsRes);
-      setAlerts(alertsRes);
-      setAgentRuns(runsRes);
-      if (runsRes.length > 0 && !selectedTraceId) {
-        setSelectedTraceId(runsRes[0].trace_id);
+      const pList = Array.isArray(projectsRes) ? projectsRes : [];
+      const aList = Array.isArray(alertsRes) ? alertsRes : [];
+      const rList = Array.isArray(runsRes) ? runsRes : [];
+      setProjects(pList);
+      setAlerts(aList);
+      setAgentRuns(rList);
+      if (rList.length > 0 && !selectedTraceId) {
+        setSelectedTraceId(rList[0].trace_id);
       }
     } catch (err: any) {
       console.error('Failed to load overview data:', err);
       setError('Could not connect to Vantage API backend.');
+      setProjects([]);
+      setAlerts([]);
+      setAgentRuns([]);
     } finally {
       setLoading(false);
     }

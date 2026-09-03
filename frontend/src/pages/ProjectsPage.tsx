@@ -20,9 +20,10 @@ export const ProjectsPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await VantageAPI.getProjects();
-      setProjects(data);
+      setProjects(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load projects:', err);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
