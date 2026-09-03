@@ -4,6 +4,8 @@ from vantage.api.dependencies import get_metadata_repository, require_api_key
 from vantage.domain.projects import Project, ProjectType, SourceToolMapping
 from vantage.storage.sqlalchemy.metadata_repository import SQLiteMetadataRepository
 
+from vantage.auth.rbac import RequirePermission, AuthContext
+
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
 
@@ -26,6 +28,7 @@ class CreateSourceMappingRequest(BaseModel):
 @router.get("", summary="List all registered projects")
 async def list_projects(
     repo: SQLiteMetadataRepository = Depends(get_metadata_repository),
+    auth: AuthContext = Depends(RequirePermission("projects.read")),
 ):
     projects = await repo.list_projects()
     return [p.model_dump() for p in projects]

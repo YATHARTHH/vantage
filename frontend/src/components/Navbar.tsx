@@ -249,6 +249,25 @@ export const Navbar: React.FC = () => {
             🌌 Vectors
           </NavLink>
 
+          <NavLink
+            to="/enterprise"
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: isActive ? '#ffffff' : '#9ca3af',
+              background: isActive ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+              border: isActive ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid transparent',
+              transition: 'all 0.2s ease',
+            })}
+          >
+            ⚙️ Enterprise
+          </NavLink>
+
           <a
             href="http://localhost:3000"
             target="_blank"

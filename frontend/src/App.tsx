@@ -8,6 +8,7 @@ import { AlertsPage } from './pages/AlertsPage';
 import { TelemetryPage } from './pages/TelemetryPage';
 import VectorDriftExplorer from './pages/VectorDriftExplorer';
 import DAGExplorer from './pages/DAGExplorer';
+import EnterpriseSettingsPage from './pages/EnterpriseSettingsPage';
 
 export const App: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
             <Route path="/telemetry" element={<TelemetryPage />} />
             <Route path="/vector-explorer" element={<VectorDriftExplorer />} />
             <Route path="/dag-explorer" element={<DAGExplorer />} />
+            <Route path="/enterprise" element={<EnterpriseSettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
