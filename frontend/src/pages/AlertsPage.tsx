@@ -35,12 +35,14 @@ export const AlertsPage: React.FC = () => {
   const activeIncidents = alerts.filter((a) => !a.resolved_at);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Anomaly Intelligence & Alerts</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
-          Multi-detector anomaly engine covering cost spikes, latency degradation, error rates, and volume outages with incident suppression.
-        </p>
+    <div className="page-container">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Anomaly Intelligence & Alerts</h2>
+          <p className="page-subtitle">
+            Multi-detector anomaly engine covering cost spikes, latency degradation, error rates, and volume outages with incident suppression.
+          </p>
+        </div>
       </div>
 
       {activeIncidents.length > 0 && (

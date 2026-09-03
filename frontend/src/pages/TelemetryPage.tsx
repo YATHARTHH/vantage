@@ -29,11 +29,11 @@ export const TelemetryPage: React.FC = () => {
   const totalTokens = safeRuns.reduce((acc, r) => acc + (r.tokens_input || 0) + (r.tokens_output || 0), 0);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+    <div className="page-container">
+      <div className="page-header">
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Agent Cost & Telemetry Explorer</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
+          <h2 className="page-title">Agent Cost & Telemetry Explorer</h2>
+          <p className="page-subtitle">
             Query-time agent total cost aggregation matching root agent spans (`parent_span_id IS NULL`).
           </p>
         </div>

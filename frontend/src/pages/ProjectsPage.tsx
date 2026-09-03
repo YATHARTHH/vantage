@@ -54,16 +54,16 @@ export const ProjectsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+    <div className="page-container">
+      <div className="page-header">
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Registered Projects</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
+          <h2 className="page-title">Registered Projects</h2>
+          <p className="page-subtitle">
             Telemetry identity mapping and source connector configurations.
           </p>
         </div>
         <button className="glass-button" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Register Project
+          <Plus size={16} /> Register Project
         </button>
       </div>
 

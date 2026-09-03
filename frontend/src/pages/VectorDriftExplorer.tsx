@@ -399,7 +399,7 @@ export default function VectorDriftExplorer() {
       position: "relative",
       minHeight: "calc(100vh - 65px)",
       height: "calc(100vh - 65px)",
-      background: "linear-gradient(135deg, #020617 0%, #0a0c1a 50%, #0d0a1a 100%)",
+      background: "linear-gradient(135deg, #030712 0%, #0b0f19 50%, #0f172a 100%)",
       fontFamily: "'Inter', system-ui, sans-serif",
       display: "flex",
       flexDirection: "column",

@@ -172,16 +172,16 @@ export const PlatformOverview: React.FC = () => {
   const currentRun = displayRuns.find((r) => r.trace_id === selectedTraceId) || displayRuns[0];
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="page-container" style={{ gap: '24px' }}>
       
       {/* Top Banner / Controls Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#06b6d4', boxShadow: '0 0 12px #06b6d4' }} />
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 10px #38bdf8' }} />
+          <h2 className="page-title">
             Platform Overview
           </h2>
-          <span className="badge badge-blue" style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+          <span className="badge badge-blue">
             Live Backend Connected
           </span>
         </div>
