@@ -32,26 +32,23 @@ class QueryService:
     ) -> list[dict]:
         return await self._repo.query_spans(project_id, trace_id, limit)
 
-    async def get_agent_runs_aggregated(self, project_id: str, hours: int = 24) -> list[dict]:
+    async def get_agent_runs_aggregated(self, project_id: str | None = None, hours: int = 24) -> list[dict]:
         """
         Query-time agent total cost aggregation.
-        Explicitly selects root agent spans (parent_span_id IS NULL) to prevent row multiplication.
+        Aggregates root agent spans (parent_span_id IS NULL) and standalone LLM call spans.
         """
-        to_dt = datetime.now(timezone.utc)
-        from_dt = to_dt - timedelta(hours=hours)
-
-        # Runs query via DuckDB repo
         spans = await self._repo.query_spans(project_id=project_id, limit=500)
-        
-        # Group child LLM spans under their root agent run trace_id
+
         agent_runs: dict[str, dict] = {}
+
+        # 1. Identify explicit root agent_run spans
         for s in spans:
             if s.get("event_kind") == "agent_run" and s.get("parent_span_id") is None:
-                trace_id = s.get("trace_id")
+                trace_id = s.get("trace_id") or s.get("event_id")
                 agent_runs[trace_id] = {
                     "trace_id": trace_id,
                     "agent_name": s.get("model_name") or s.get("event_kind") or "Agent",
-                    "started_at": s.get("started_at"),
+                    "started_at": str(s.get("started_at")),
                     "total_cost_usd": 0.0,
                     "llm_call_count": 0,
                     "tokens_input": 0,
@@ -59,13 +56,29 @@ class QueryService:
                     "status": s.get("status"),
                 }
 
+        # 2. Aggregate llm_call spans (either under root agent or as standalone entries)
         for s in spans:
             if s.get("event_kind") == "llm_call":
-                trace_id = s.get("trace_id")
+                trace_id = s.get("trace_id") or s.get("event_id")
+                cost = float(s.get("cost_usd") or 0.0)
+                tok_in = int(s.get("tokens_input") or 0)
+                tok_out = int(s.get("tokens_output") or 0)
+
                 if trace_id in agent_runs:
-                    agent_runs[trace_id]["total_cost_usd"] += (s.get("cost_usd") or 0.0)
+                    agent_runs[trace_id]["total_cost_usd"] = round(agent_runs[trace_id]["total_cost_usd"] + cost, 6)
                     agent_runs[trace_id]["llm_call_count"] += 1
-                    agent_runs[trace_id]["tokens_input"] += (s.get("tokens_input") or 0)
-                    agent_runs[trace_id]["tokens_output"] += (s.get("tokens_output") or 0)
+                    agent_runs[trace_id]["tokens_input"] += tok_in
+                    agent_runs[trace_id]["tokens_output"] += tok_out
+                else:
+                    agent_runs[trace_id] = {
+                        "trace_id": trace_id,
+                        "agent_name": s.get("model_name") or "LLM Agent",
+                        "started_at": str(s.get("started_at")),
+                        "total_cost_usd": round(cost, 6),
+                        "llm_call_count": 1,
+                        "tokens_input": tok_in,
+                        "tokens_output": tok_out,
+                        "status": s.get("status"),
+                    }
 
         return list(agent_runs.values())
