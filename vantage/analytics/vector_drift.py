@@ -19,9 +19,16 @@ import math
 from dataclasses import dataclass, field
 from typing import Optional
 
-import numpy as np
-from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import TfidfVectorizer
+try:
+    import numpy as np
+    from sklearn.decomposition import TruncatedSVD
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    HAS_ML_DEPS = True
+except ImportError:
+    HAS_ML_DEPS = False
+    np = None  # type: ignore
+    TruncatedSVD = None  # type: ignore
+    TfidfVectorizer = None  # type: ignore
 
 
 # ---------------------------------------------------------------------------
@@ -86,9 +93,11 @@ class VectorProjectionEngine:
 
     def fit_transform(self, texts: list[str]) -> np.ndarray:
         """Fit on corpus and return (n_traces, 3) coordinate array."""
-        if len(texts) < 2:
-            # Return zero coords for trivially small corpora
-            return np.zeros((len(texts), self.n_components))
+        if not HAS_ML_DEPS or len(texts) < 2:
+            # Return zero coords for trivially small corpora or when ML deps missing
+            if np is not None:
+                return np.zeros((len(texts), self.n_components))
+            return [[0.0, 0.0, 0.0] for _ in range(len(texts))]  # type: ignore
 
         self._vectorizer = TfidfVectorizer(
             max_features=5000,
@@ -178,7 +187,7 @@ def compute_vector_drift(
     Returns:
         VectorDriftResult with 3D projected points and drift metrics.
     """
-    if not traces:
+    if not traces or not HAS_ML_DEPS:
         return VectorDriftResult()
 
     texts = [t.get("prompt_text", "") or "" for t in traces]
