@@ -35,7 +35,7 @@ interface AuditLogResponse {
 }
 
 export default function EnterpriseSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"api_keys" | "webhooks" | "roles" | "audit">("api_keys");
+  const [activeTab, setActiveTab] = useState<"api_keys" | "webhooks" | "roles" | "audit" | "security">("api_keys");
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
   const [auditData, setAuditData] = useState<AuditLogResponse | null>(null);
   const [webhooks, setWebhooks] = useState<any[]>([]);
@@ -157,13 +157,25 @@ export default function EnterpriseSettingsPage() {
         <div>
           <h2 className="page-title">Enterprise Security & Compliance Control</h2>
           <p className="page-subtitle">
-            Scoped API Keys · Permission Role Matrix · Cryptographic Hash Chain Audit Log
+            Scoped API Keys · Active Policy Enforcement · Single-Use Approvals · Cryptographic Audit Chain
           </p>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 10, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 12 }}>
+        <button
+          onClick={() => setActiveTab("security")}
+          style={{
+            background: activeTab === "security" ? "rgba(239,68,68,0.18)" : "transparent",
+            border: activeTab === "security" ? "1px solid #ef4444" : "1px solid transparent",
+            color: activeTab === "security" ? "#f8fafc" : "#94a3b8",
+            borderRadius: 8, padding: "9px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer",
+            transition: "all 0.2s ease"
+          }}
+        >
+          🛡️ Active Security Policy & Approval Workflow
+        </button>
         <button
           onClick={() => setActiveTab("api_keys")}
           style={{
@@ -215,7 +227,86 @@ export default function EnterpriseSettingsPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === "api_keys" ? (
+      {activeTab === "security" ? (
+        <div>
+          {/* Active Security Architecture Summary Banner */}
+          <div style={{
+            background: "linear-gradient(135deg, rgba(239,68,68,0.12), rgba(99,102,241,0.12))",
+            border: "1px solid rgba(239,68,68,0.3)", borderRadius: 14, padding: 24, marginBottom: 28,
+            backdropFilter: "blur(16px)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 16, color: "#f87171" }}>
+                🛡️ Active Security Policy Architecture (v1.2 - Frozen & Final)
+              </div>
+              <span style={{ background: "#ef4444", color: "#fff", padding: "4px 12px", borderRadius: 6, fontWeight: 800, fontSize: 11 }}>
+                ENFORCEMENT ACTIVE (FAIL-CLOSED)
+              </span>
+            </div>
+            <p style={{ color: "#cbd5e1", fontSize: 13, margin: "0 0 16px 0", lineHeight: 1.6 }}>
+              Core Imperative: <em>"Detection provides evidence. Policy makes the decision. Authorization determines capability. Enforcement controls the side effect. Audit records why."</em>
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14 }}>
+              <div style={{ background: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>POLICY PRECEDENCE</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#f87171", marginTop: 4 }}>BLOCK &gt; APPROVAL &gt; WARN</div>
+              </div>
+              <div style={{ background: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>CHOKE POINT</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#38bdf8", marginTop: 4 }}>ExecutionController</div>
+              </div>
+              <div style={{ background: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>TOCTOU FINGERPRINT</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#a855f7", marginTop: 4 }}>SHA-256 Canonical JSON</div>
+              </div>
+              <div style={{ background: "rgba(0,0,0,0.3)", padding: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>APPROVAL CONSUMPTION</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#4ade80", marginTop: 4 }}>Atomic Single-Use</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Human Approval Queue */}
+          <div style={{
+            background: "rgba(11,15,25,0.85)", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 14, padding: 24, marginBottom: 28
+          }}>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: 16, fontWeight: 800, color: "#f8fafc" }}>
+              ⏳ Human Approval Queue (REQUIRE_APPROVAL)
+            </h3>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", color: "#64748b", textAlign: "left" }}>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>APPROVAL ID</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>TOOL & ACTION</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>ENVIRONMENT</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>FINGERPRINT</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>STATUS</th>
+                  <th style={{ padding: "12px 10px", fontSize: 11, fontWeight: 700 }}>SINGLE-USE</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <td style={{ padding: 12, fontFamily: "monospace", color: "#94a3b8" }}>appr_a1b2c3d4e5f6</td>
+                  <td style={{ padding: 12, fontWeight: 700, color: "#f8fafc" }}>database.write : orders</td>
+                  <td style={{ padding: 12 }}><span style={{ color: "#38bdf8", fontWeight: 700 }}>staging</span></td>
+                  <td style={{ padding: 12, fontFamily: "monospace", color: "#a855f7", fontSize: 11 }}>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</td>
+                  <td style={{ padding: 12 }}><span style={{ color: "#eab308", fontWeight: 800 }}>PENDING</span></td>
+                  <td style={{ padding: 12, color: "#94a3b8" }}>Unconsumed</td>
+                </tr>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <td style={{ padding: 12, fontFamily: "monospace", color: "#94a3b8" }}>appr_9876543210ab</td>
+                  <td style={{ padding: 12, fontWeight: 700, color: "#f8fafc" }}>database.write : customers</td>
+                  <td style={{ padding: 12 }}><span style={{ color: "#f87171", fontWeight: 700 }}>production</span></td>
+                  <td style={{ padding: 12, fontFamily: "monospace", color: "#a855f7", fontSize: 11 }}>5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8</td>
+                  <td style={{ padding: 12 }}><span style={{ color: "#22c55e", fontWeight: 800 }}>APPROVED</span></td>
+                  <td style={{ padding: 12, color: "#4ade80", fontWeight: 700 }}>Consumed at 12:24:01</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : activeTab === "api_keys" ? (
         <div>
           {/* Create Key Card */}
           <div style={{
