@@ -178,7 +178,7 @@ Tamper-evident, cryptographically chained compliance log table.
 - `resource_type` (`VARCHAR`, Not Null), `resource_id` (`VARCHAR`)
 - `details_json` (`TEXT`): Redacted JSON action metadata.
 - `previous_hash` (`VARCHAR`, Not Null): SHA-256 hash of preceding row entry (`hash_{i-1}`).
-- `record_hash` (`VARCHAR`, Not Null): Cryptographic hash of current entry ($\text{SHA256}(\text{row\_contents} + \text{previous\_hash})$).
+- `record_hash` (`VARCHAR`, Not Null): Cryptographic hash of current entry (`SHA256(row_contents + previous_hash)`).
 
 ---
 

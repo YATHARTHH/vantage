@@ -37,7 +37,7 @@
 **Answer**: Choosing OpenTelemetry eliminates vendor lock-in and allows Vantage to ingest spans from any ecosystem (LangChain, LlamaIndex, OpenAI, Anthropic, or native HTTP clients) without requiring developers to rewrite instrumentation. By standardizing on OpenInference and OTLP GenAI semantic conventions (`gen_ai.usage.input_tokens`, `gen_ai.input.messages`), Vantage remains future-proof against evolving agent frameworks.
 
 #### Q2: How does Vantage handle high-throughput telemetry bursts without dropping spans?
-**Answer**: Vantage implements a `BoundedIngestBuffer` using Python’s `deque(maxlen=10000)` paired with an async background worker flushing batches every 500ms or 100 items. If telemetry bursts exceed memory buffer capacity, overflows are written atomically to a JSONL Dead-Letter Queue (`.dlq_spans.jsonl`). This decoupling ensures the HTTP ingestion endpoint responds in $<15\text{ ms}$ while guaranteeing zero span loss.
+**Answer**: Vantage implements a `BoundedIngestBuffer` using Python’s `deque(maxlen=10000)` paired with an async background worker flushing batches every 500ms or 100 items. If telemetry bursts exceed memory buffer capacity, overflows are written atomically to a JSONL Dead-Letter Queue (`.dlq_spans.jsonl`). This decoupling ensures the HTTP ingestion endpoint responds in <= 15 ms while guaranteeing zero span loss.
 
 #### Q3: How do you track parent-child relationships in multi-step AI agent execution graphs?
 **Answer**: Each incoming span contains a `trace_id`, a `span_id`, and an optional `parent_span_id`. When an agent initiates a workflow, the root span generates a unique `trace_id`. Sub-actions (LLM queries, tool invocations, retriever fetches) inherit the `trace_id` and pass their parent's `span_id` down the execution context. In DuckDB and the React frontend, we construct the Directed Acyclic Graph (DAG) by recursive CTE query joins over `parent_span_id`.
@@ -82,10 +82,10 @@
 ### Category D: System Performance & SRE
 
 #### Q13: How does Vantage maintain a p95 latency under 15ms for telemetry ingestion?
-**Answer**: The `/api/v1/otlp/v1/traces` endpoint performs minimal synchronous work: header authentication, gzip decompression, and in-flight regex/Luhn PII masking. The normalized span is pushed into an in-memory `BoundedIngestBuffer` in $<2\text{ ms}$, returning an HTTP 202 response immediately. Heavy DuckDB persistence occurs asynchronously in background batch flushes.
+**Answer**: The `/api/v1/otlp/v1/traces` endpoint performs minimal synchronous work: header authentication, gzip decompression, and in-flight regex/Luhn PII masking. The normalized span is pushed into an in-memory `BoundedIngestBuffer` in <= 2 ms, returning an HTTP 202 response immediately. Heavy DuckDB persistence occurs asynchronously in background batch flushes.
 
 #### Q14: How does the cryptographic audit log detect historical database tampering?
-**Answer**: `AuditLogModel` implements a SHA-256 cryptographic hash chain. Each log entry $i$ computes `record_hash` as $\text{SHA256}(\text{actor\_key\_id} + \text{action} + \text{details\_json} + \text{previous\_hash}_{i-1})$. If an attacker directly modifies or deletes row $k$ in SQLite, every subsequent entry's `previous_hash` fails to match the recomputed digest. Calling `GET /api/v1/audit/logs` validates the chain end-to-end and highlights the exact index of tampering.
+**Answer**: `AuditLogModel` implements a SHA-256 cryptographic hash chain. Each log entry `i` computes `record_hash` as `SHA256(actor_key_id + action + details_json + previous_hash_[i-1])`. If an attacker directly modifies or deletes row `k` in SQLite, every subsequent entry's `previous_hash` fails to match the recomputed digest. Calling `GET /api/v1/audit/logs` validates the chain end-to-end and highlights the exact index of tampering.
 
 #### Q15: How does the `TraceActionCircuitBreaker` protect against infinite agent loops?
 **Answer**: `TraceActionCircuitBreaker` maintains action budgets per `trace_id` sequence. It tracks total tool calls (`max_tool_calls_per_trace = 50`), high-risk actions (`max_high_risk_actions_per_trace = 5`), and external dispatches. If an agent enters an infinite loop, the budget is exceeded, tripping the breaker to `OPEN` and halting further tool calls for that trace.
@@ -171,7 +171,7 @@
 **Answer**: Since OpenTelemetry (OTLP) is language-agnostic, agents written in any language can send spans to `/api/v1/otlp/v1/traces`. Active tool enforcement can be integrated via REST API wrappers around `ExecutionController`.
 
 #### Q11: How does Vantage verify cryptographic audit log chain integrity?
-**Answer**: Call `GET /api/v1/audit/logs`. The endpoint iterates through all rows, re-computing $\text{SHA256}(\text{row} + \text{previous\_hash}_{i-1})$ and verifying it matches `record_hash_i`. It returns `chain_valid = true` if intact.
+**Answer**: Call `GET /api/v1/audit/logs`. The endpoint iterates through all rows, re-computing `SHA256(row + previous_hash_[i-1])` and verifying it matches `record_hash_i`. It returns `chain_valid = true` if intact.
 
 #### Q12: Can Vantage detect indirect prompt injections embedded inside PDF or HTML RAG documents?
 **Answer**: Yes. Vantage treats all RAG context and web page retrievals as `UNTRUSTED` provenance in `SecurityContext`. Incoming text is scanned by `JailbreakDetector` prior to LLM processing.
