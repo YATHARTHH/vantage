@@ -94,7 +94,7 @@ Vantage achieves this through 5 core pillars:
 2. **Dual-Database Storage Engine**: High-performance DuckDB OLAP engine for sub-second analytical queries across millions of spans paired with SQLite/SQLAlchemy 2.0 for transactional metadata, API key management, and hash-chained audit trails.
 3. **Mandatory Execution Controller Choke-Point**: A single enforcement point (`ExecutionController.execute(...)`) that intercepts all tool calls, verifying capabilities, data classifications, destination trust levels, and human approval status before tool execution occurs.
 4. **Cryptographic Human-in-the-Loop Approval Workflow**: Single-use approval state machine with Time-Of-Check-To-Time-Of-Use (TOCTOU) action fingerprinting:
-   $$\text{approval\_fingerprint} = \text{SHA256}(\text{canonical\_json}(\{\text{tool}, \text{action}, \text{resource}, \text{environment}, \text{arguments}\}))$$
+   `approval_fingerprint = SHA256(canonical_json({tool, action, resource, environment, arguments}))`
 5. **Deterministic Trace Replay Engine**: Reconstructs complete execution state from recorded spans and mocks downstream tool responses to allow offline debugging and "What-If" prompt tuning without side-effects.
 
 ---
@@ -162,7 +162,7 @@ Vantage achieves this through 5 core pillars:
 6. **Multi-State Circuit Breaking & Anomaly Detection**: Track trace budgets (`max_tool_calls_per_trace`, `max_high_risk_actions_per_trace`) and statistical anomalies (Z-score, error rates, volume spikes).
 
 ### Non-Functional Requirements
-1. **Latency Targets**: Ingestion API endpoint response p95 $\le 15\text{ ms}$; `ExecutionController` policy evaluation overhead $\le 2\text{ ms}$.
+1. **Latency Targets**: Ingestion API endpoint response p95 <= 15 ms; `ExecutionController` policy evaluation overhead <= 2 ms.
 2. **Buffer Losslessness & Resilience**: In-memory ring buffer with capacity `max_capacity=10000`. Overflows routed atomically to Dead-Letter Queue (`.dlq_spans.jsonl`).
 3. **Fail-Closed Execution & Safe Degradation**: Security enforcement path fails closed (`BLOCK` on scanner failure). Telemetry ingestion path degrades safely.
 4. **Data Isolation**: Strict multi-tenant isolation by `project_id` across database queries and API keys.

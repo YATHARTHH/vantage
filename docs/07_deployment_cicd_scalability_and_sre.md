@@ -186,7 +186,7 @@ To scale Vantage from a single-instance deployment to high-throughput enterprise
 
 ### Service Level Objectives (SLOs)
 - **Ingestion Availability**: $99.95\%$ uptime for `/api/v1/otlp/v1/traces`.
-- **Policy Enforcement Latency**: p99 overhead $\le 3\text{ ms}$ for `ExecutionController.execute()`.
+- **Policy Enforcement Latency**: p99 overhead <= 3 ms for `ExecutionController.execute()`.
 - **Telemetry Processing Losslessness**: Zero span loss under normal operating parameters; $< 0.001\%$ DLQ overflow rate under extreme spikes.
 
 ### Operational Incident Runbooks

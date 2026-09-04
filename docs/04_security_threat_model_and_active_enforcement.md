@@ -137,7 +137,7 @@ Policy Enforcement Rule:
 ### TOCTOU Action Fingerprinting & Single-Use Approvals
 To prevent Time-Of-Check-To-Time-Of-Use (TOCTOU) argument tampering and approval replay attacks, `HumanApprovalWorkflow` generates a SHA-256 fingerprint:
 
-$$\text{approval\_fingerprint} = \text{SHA256}(\text{canonical\_json}(\{\text{tool}, \text{action}, \text{resource}, \text{environment}, \text{arguments}\}, \text{sort\_keys}=\text{True}))$$
+`approval_fingerprint = SHA256(canonical_json({tool, action, resource, environment, arguments}, sort_keys=True))`
 
 - **Single-Use Semantics**: When `ExecutionController` processes an approved request, `consume_approval()` checks `consumed_at is None` and atomically sets `consumed_at = time.time()`. Subsequent attempts using the same approval ID are blocked (`APPROVAL_ALREADY_CONSUMED`).
 - **Stale Policy Protection**: Verifies `approved_policy_version == current_policy_version`. If an admin updates the security policy from `v1.2.0` to `v1.3.0` while an approval is pending, execution returns `BLOCK` with `reason_code = "APPROVAL_POLICY_STALE"`.
@@ -162,6 +162,6 @@ Vantage enforces 3 strict role permission levels:
 ### Cryptographic Tamper-Evident Audit Logging
 All administrative security actions (API key creation, policy changes, human approvals, security blocks) write an entry to `audit_logs` using a cryptographic SHA-256 hash chain:
 
-$$\text{record\_hash}_i = \text{SHA256}(\text{actor\_key\_id} + \text{action} + \text{resource\_type} + \text{details\_json} + \text{record\_hash}_{i-1})$$
+`record_hash[i] = SHA256(actor_key_id + action + resource_type + details_json + record_hash[i-1])`
 
 If an attacker modifies or deletes a historical audit entry in the database, verifying the hash chain via `GET /api/v1/audit/logs` immediately flags `chain_valid = false` and highlights the exact index where tampering occurred.
