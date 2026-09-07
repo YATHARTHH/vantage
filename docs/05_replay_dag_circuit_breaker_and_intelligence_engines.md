@@ -22,6 +22,14 @@ Document 05 solves 3 major operational challenges when running AI agents in prod
 
 ## 1. Deterministic Replay & What-If Engine
 
+### Why We Built This
+Debugging non-deterministic AI agents is hard because you cannot reproduce the same bug twice — the LLM gives a different answer every time you re-run. Without the Replay Engine, a developer would have to:
+1. Wait for the bug to happen again in production (risky)
+2. Manually reconstruct the agent state (slow and error-prone)
+3. Call real external APIs while debugging (costs money and has side effects)
+
+The Replay Engine solves this by **recording the exact state of a past execution** and letting you re-run it offline with mocked tool responses.
+
 Debugging non-deterministic LLM applications is notoriously difficult because model outputs vary across executions. Vantage provides a deterministic **Replay & What-If Intelligence Engine** (`vantage/services/replay_service.py` & `vantage/replay/engine.py`) that reconstructs past agent executions, mocks downstream tool side-effects, and allows developers to test modified prompt templates offline.
 
 ```text
@@ -70,9 +78,69 @@ class ReplayManifest(BaseModel):
 3. **What-If Prompt Injection**: Executes the agent loop using a candidate system prompt (e.g. testing prompt `v2.1` against prompt `v1.0`).
 4. **Divergence Analysis**: Compares token counts, latency deltas, tool call choices, and final execution outputs against baseline traces without triggering real-world external side-effects.
 
+### How to Use the Replay Engine (Code Example)
+
+Here is how a developer actually triggers the replay in practice:
+
+**Step 1 — Generate the ReplayManifest from a past trace** (via the API):
+```python
+import requests
+
+# Generate a replay manifest from a historical trace
+response = requests.post(
+    "http://localhost:8000/api/v1/replay/manifest",
+    headers={"Authorization": "Bearer dev-local-key"},
+    json={"trace_id": "4bf92f3577b34da6a3ce929d0e0e4736", "project_id": "proj_alpha"}
+)
+manifest = response.json()
+print(f"Manifest ID: {manifest['manifest_id']}")
+print(f"Original prompt: {manifest['initial_prompt']}")
+print(f"Tool mocks available: {len(manifest['step_mocks'])}")
+```
+
+**Step 2 — Execute a What-If replay with a different system prompt**:
+```python
+# Run the replay with a candidate new system prompt
+replay_response = requests.post(
+    "http://localhost:8000/api/v1/replay/execute",
+    headers={"Authorization": "Bearer dev-local-key"},
+    json={
+        "manifest_id": manifest["manifest_id"],
+        "candidate_system_prompt": "You are a strict billing assistant. Require manager approval for all refunds over $50."
+    }
+)
+result = replay_response.json()
+print(f"Token change: {result['token_delta']} tokens")
+print(f"Cost change: ${result['cost_delta_usd']:.4f}")
+print(f"Tool call differences: {result['tool_divergence']}")
+```
+
+> 💡 **Key benefit**: All tool calls in the replay use **mocked historical responses** — no real database queries, no real API calls, no real money spent.
+
 ---
 
 ## 2. Dynamic Frontend SVG DAG Visualizer
+
+### Why We Built This
+Without the DAG Visualizer, a developer debugging a complex multi-hop agent would only see raw log lines like:
+```
+[10:00:01] Span abc123 - LLM call - 450ms
+[10:00:01] Span def456 - Tool: database.read - 45ms  
+[10:00:02] Span ghi789 - LLM call - 850ms
+[10:00:02] Span jkl012 - Tool: http.post - 180ms [BLOCKED]
+```
+
+This is hard to understand. The DAG Visualizer turns this into a visual tree that clearly shows **which LLM step triggered which tool call**, the cost and timing of each node, and exactly which step was blocked by the security policy.
+
+### How the DAG is Built (Technical Detail)
+The frontend queries `/api/v1/query/spans?project_id=proj_alpha&trace_id=4bf92f...` to retrieve all spans for a trace. Each span has a `trace_id`, a `span_id`, and an optional `parent_span_id`.
+
+The React component then:
+1. Groups all spans by `trace_id`
+2. Builds a tree structure using `parent_span_id` as the edge (child → parent link)
+3. Computes SVG node positions in depth-first order (root at top, children below)
+4. Colors each node based on cost relative to trace total (green = cheap, orange = moderate, red = expensive)
+5. Attaches security policy badges (`ALLOW`, `WARN`, `REQUIRE_APPROVAL`, `BLOCK`) to nodes where `ExecutionController` intercepted the call
 
 The Vantage SPA (`frontend/src/components/DAGVisualizer.tsx`) renders interactive, dynamic Directed Acyclic Graphs (DAGs) representing complex multi-step agent execution trees.
 
@@ -97,6 +165,18 @@ The Vantage SPA (`frontend/src/components/DAGVisualizer.tsx`) renders interactiv
 ---
 
 ## 3. Multi-State Policy Circuit Breaker
+
+### The 3 States Explained Simply
+
+The circuit breaker has 3 states, just like the electrical circuit breaker in your home's fuse box:
+
+| State | What It Means | What Happens to Requests |
+|:------|:--------------|:-------------------------|
+| 🟢 **CLOSED** | Everything is working normally. All checks passed. | Requests are allowed through and processed normally. |
+| 🔴 **OPEN** | Too many errors or too much budget consumed. Gate is shut. | ALL requests are immediately rejected without being processed. Returns HTTP 503. |
+| 🟡 **HALF-OPEN** | The cooldown window (60 seconds) has expired. We're testing if the problem is fixed. | A single trial request is let through. If it succeeds, the breaker returns to CLOSED. If it fails, it goes back to OPEN. |
+
+> 💡 **Real Example**: Imagine an AI agent loops 50 times in 10 seconds calling an external search API. Vantage's circuit breaker trips to **OPEN** after the 50th call, immediately halting all further tool calls for that trace. After 60 seconds, it moves to **HALF-OPEN** and allows one probe request to verify if the underlying issue is resolved.
 
 The `TraceActionCircuitBreaker` (`vantage/core/circuit_breaker.py`) and project cost policies protect agent deployments against runaway cost spikes, infinite tool execution loops, and unbounded resource consumption (`LLM10:2025`).
 
@@ -160,6 +240,38 @@ Vantage incorporates **5 specialized statistical anomaly detectors** (`vantage/a
 │ 5. Volume Spike       │ VolRatio = v_current / μ_historical│ Spots botnet traffic spikes  │
 │    Detector           │ Triggers if VolRatio > limit (3.0)│ or DDoS prompt injection spam.│
 └───────────────────────┴───────────────────────────────────┴──────────────────────────────┘
+```
+
+### Anomaly Alert Delivery Pathway
+When an anomaly detector fires, here is the complete path the alert travels from detection to notification:
+
+```text
+ ANOMALY DETECTOR FIRES
+         │
+         ▼
+  ┌──────────────────────────────────────┐
+  │ 1. Alert stored in `alert_records`   │
+  │    table in SQLite                   │
+  │    (severity, metric, current_value) │
+  └──────────────────┬───────────────────┘
+                     │
+                     ▼
+  ┌──────────────────────────────────────┐
+  │ 2. Check `alert_suppression_rules`   │
+  │    Is this alert suppressed?         │
+  └────────────┬────────────────┬────────┘
+     YES ──────┘                └──── NO
+  (log as info,                        │
+   no notification)                    ▼
+                        ┌──────────────────────────┐
+                        │ 3. WebhookNotifier fires  │
+                        │    HMAC-signed payload to │
+                        │    registered webhooks    │
+                        └────────────┬─────────────┘
+                                     │
+                     ┌───────────────┼───────────────┐
+                     ▼               ▼               ▼
+              Slack Webhook    Teams Webhook    Custom Webhook
 ```
 
 ### Anomaly Suppression Workflow
