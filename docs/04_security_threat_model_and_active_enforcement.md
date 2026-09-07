@@ -182,25 +182,120 @@ Vantage contains **13 distinct security engines and controls** working together 
 
 ---
 
-## 4. Deep-Dive Explanations of Core Enforcement Mechanics
+## 4. Deep-Dive Explanations of All 13 Core Enforcement Features
 
-### A. In-Flight PII & Secret Redaction Engine (`PIIMasker`)
-* **Why We Use It**: Users type credit card numbers, Social Security Numbers, passwords, or API keys into prompts. Storing raw PII violates GDPR, HIPAA, and PCI-DSS compliance.
-* **Implementation (`vantage/security/pii_masker.py`)**:
-  1. `PIIMasker` scrubs telemetry in memory *before* saving to DuckDB or SQLite.
-  2. Runs regex pattern matching for SSNs (`000-00-0000`), email addresses, and API keys (`sk-...`, `ghp_...`).
-  3. Executes the **Luhn Algorithm** on 16-digit sequences so actual credit cards are replaced with `[REDACTED_CREDIT_CARD]`, while normal 16-digit order numbers remain intact without false positives!
+Here is the exhaustive, feature-by-feature implementation breakdown for all 13 security features in the Vantage active security architecture:
 
-### B. Threat Detection Engines (`JailbreakDetector` & Destination Trust)
-* **Why We Use It**: AI agents can be tricked into running unauthorized commands or exfiltrating confidential data to external servers.
-* **Implementation**:
-  1. `JailbreakDetector` (`vantage/security/jailbreak_detector.py`) decodes obfuscated inputs (`PayloadDecoder`) and scans prompt text for injection patterns (`"ignore previous instructions"`, `"DAN mode"`).
-  2. `OutputInspector` (`vantage/security/output_inspector.py`) ranks data sensitivity (`PUBLIC` to `RESTRICTED`) and destination trust (`TRUSTED_INTERNAL` to `UNKNOWN_EXTERNAL`). If an agent attempts to send `RESTRICTED` data to an `UNKNOWN_EXTERNAL` URL, execution is **BLOCKED** immediately (`reason_code = "DATA_EXFILTRATION_PREVENTED"`).
+---
 
-### C. Human-in-the-Loop & Audit Governance
-* **Why We Use It**: High-risk AI actions (wire transfers, DB deletes) require human approval. We must prevent argument tampering between approval time and execution time (TOCTOU attack) and detect audit log tampering.
-* **Implementation**:
-  1. **TOCTOU Action Fingerprinting** (`vantage/security/approval_workflow.py`): Generates a SHA-256 fingerprint of the request parameters: `approval_fingerprint = SHA256({tool, action, resource, environment, arguments})`. When `ExecutionController` runs the tool, it verifies the hash and atomically marks `consumed_at = timestamp` (single-use semantics).
-  2. **Cryptographic Audit Chain** (`vantage/storage/sqlalchemy/models.py`): Audit rows are linked using `SHA256(current_row + previous_row_hash)`. If a hacker alters any past record in SQLite, `GET /api/v1/audit/logs` flags `chain_valid = false`.
+### Feature 1: Mandatory Execution Controller Choke Point
+* **Why We Use It**: Without a central choke point, agent code could invoke external tools directly from scattered modules, bypassing security scanners.
+* **How It Works & Implementation (`vantage/security/execution_controller.py`)**:
+  * `ExecutionController.execute(...)` is the **sole mandatory gateway** for tool execution in the system.
+  * Receives `SecurityContext`, calls `ToolAuthorizer`, `OutputInspector`, `JailbreakDetector`, `MultiSignalPolicyGate`, and `HumanApprovalWorkflow`.
+  * If all checks pass, it executes the tool function and writes a tamper-evident record to `audit_logs`.
+
+---
+
+### Feature 2: Deny-by-Default Capability Authorizer
+* **Why We Use It**: Enforces the Principle of Least Privilege so AI agents can only execute tools explicitly permitted for their identity and environment.
+* **How It Works & Implementation (`vantage/security/tool_authorizer.py`)**:
+  * `ToolAuthorizer.is_authorized(ctx)` checks if `(principal_id, agent_id)` possesses explicit capability grants for `Action:Resource:Environment` (e.g. `database:query:production`).
+  * If capability grants are missing, execution returns `BLOCK` (`reason_code = "TOOL_CAPABILITY_DENIED"`).
+
+---
+
+### Feature 3: In-Flight PII & Secret Redaction Engine (`PIIMasker`)
+* **Why We Use It**: Prevents user credit cards, SSNs, and passwords from being logged in telemetry databases, ensuring compliance with GDPR, HIPAA, and PCI-DSS.
+* **How It Works & Implementation (`vantage/security/pii_masker.py`)**:
+  * Intercepts span strings in memory *before* saving to DuckDB or SQLite.
+  * Uses regex pattern matching for SSNs (`000-00-0000`) and API keys (`sk-...`, `ghp_...`).
+  * Runs the **Luhn Algorithm** on 16-digit sequences so actual credit cards are replaced with `[REDACTED_CREDIT_CARD]`, while normal 16-digit order numbers remain intact.
+
+---
+
+### Feature 4: Prompt Injection & Jailbreak Scanner (`JailbreakDetector`)
+* **Why We Use It**: Detects malicious prompt injections that attempt to hijack LLM instructions or trick the model into DAN (Do Anything Now) roleplay mode.
+* **How It Works & Implementation (`vantage/security/jailbreak_detector.py`)**:
+  * `JailbreakDetector.scan(...)` analyzes prompt text and RAG context using multi-pattern regex matching.
+  * Detects override commands (`"ignore previous instructions"`, `"system override"`), persona impersonation, and safety bypass prompts.
+
+---
+
+### Feature 5: Text Normalizer & Obfuscation Decoder
+* **Why We Use It**: Hackers use base64, hex encodings, or zero-width unicode characters to hide malicious prompt injections from basic string scanners.
+* **How It Works & Implementation (`vantage/security/normalizer.py` & `decoder.py`)**:
+  * `TextNormalizer` removes unicode homoglyphs and zero-width spaces.
+  * `PayloadDecoder` automatically detects and decodes base64 and hex strings to reveal hidden payloads *before* sending text to `JailbreakDetector`.
+
+---
+
+### Feature 6: Data Classification Engine (`OutputInspector`)
+* **Why We Use It**: Categorizes payload data sensitivity so the system can enforce strict data movement policies.
+* **How It Works & Implementation (`vantage/security/output_inspector.py`)**:
+  * Classifies payload sensitivity into 5 formal tiers: `PUBLIC` < `INTERNAL` < `CONFIDENTIAL` < `SENSITIVE` < `RESTRICTED`.
+  * Inspects parameters and payload content to tag sensitivity tags on the request context.
+
+---
+
+### Feature 7: Destination Trust Guard (Exfiltration Prevention)
+* **Why We Use It**: Prevents compromised AI agents from emailing or POSTing sensitive company data to untrusted external URLs.
+* **How It Works & Implementation (`vantage/security/output_inspector.py`)**:
+  * Categorizes target destination hostnames into 4 trust tiers: `TRUSTED_INTERNAL`, `APPROVED_EXTERNAL`, `UNKNOWN_EXTERNAL`, and `BLOCKED`.
+  * **Enforcement Rule**: If an agent attempts to route `RESTRICTED` or `SENSITIVE` data to an `UNKNOWN_EXTERNAL` or `BLOCKED` URL, execution is **BLOCKED** (`reason_code = "DATA_EXFILTRATION_PREVENTED"`).
+
+---
+
+### Feature 8: Multi-Signal Deterministic Precedence Policy Engine
+* **Why We Use It**: Prevents single positive heuristic scores from overriding serious security threats.
+* **How It Works & Implementation (`vantage/security/policy_gate.py`)**:
+  * `MultiSignalPolicyGate.evaluate()` combines all threat signals using strict precedence order:
+    `BLOCK > REQUIRE_APPROVAL > WARN > ALLOW`.
+  * If ANY security scanner returns a block signal, the final decision is `BLOCK` regardless of other signals.
+
+---
+
+### Feature 9: Single-Use TOCTOU Action Fingerprinting Workflow
+* **Why We Use It**: Prevents Time-Of-Check-To-Time-Of-Use (TOCTOU) argument tampering, where an attacker modifies tool arguments after human approval is granted.
+* **How It Works & Implementation (`vantage/security/approval_workflow.py`)**:
+  * `HumanApprovalWorkflow` hashes request context into a SHA-256 fingerprint:
+    `approval_fingerprint = SHA256({tool, action, resource, environment, arguments})`
+  * When `ExecutionController` runs the approved tool, it verifies the hash matches AND atomically sets `consumed_at = timestamp` so the token cannot be reused (`APPROVAL_ALREADY_CONSUMED`).
+
+---
+
+### Feature 10: Role-Based Access Control (RBAC Engine)
+* **Why We Use It**: Restricts administrative permissions so non-admin users cannot alter security policies or revoke API keys.
+* **How It Works & Implementation (`vantage/auth/rbac.py`)**:
+  * Enforces 3 role levels:
+    * `Viewer`: Read metrics, view trace trees, inspect metadata.
+    * `Developer`: Ingest telemetry, run offline replays, evaluate What-If forks.
+    * `Admin`: Full access to create/revoke API keys, update policies, and inspect audit logs.
+
+---
+
+### Feature 11: Cryptographic Hash-Chained Audit Trail
+* **Why We Use It**: Prevents attackers or compromised DB accounts from silently modifying or deleting audit log records to cover their tracks.
+* **How It Works & Implementation (`vantage/storage/sqlalchemy/models.py`)**:
+  * Every audit entry computes a SHA-256 hash:
+    `record_hash[i] = SHA256(actor + action + details + record_hash[i-1])`
+  * Calling `GET /api/v1/audit/logs` verifies the entire chain. Modifying any historical row breaks all downstream hashes (`chain_valid = false`).
+
+---
+
+### Feature 12: Trace Action Budget Circuit Breaker
+* **Why We Use It**: Prevents AI agents from getting stuck in infinite loops that exhaust API rate limits and burn thousands of dollars in token fees.
+* **How It Works & Implementation (`vantage/core/circuit_breaker.py`)**:
+  * `TraceActionCircuitBreaker` tracks execution step count and token expenditure per trace ID.
+  * If an agent exceeds its max allowed steps (e.g. max 10 tool calls per trace), the circuit breaker trips and halts execution (`ACTION_BUDGET_EXCEEDED`).
+
+---
+
+### Feature 13: SSRF Firewall Webhook Dispatcher
+* **Why We Use It**: Prevents outbound webhooks from being exploited via Server-Side Request Forgery (SSRF) to target internal private services (`127.0.0.1`, `169.254.169.254`).
+* **How It Works & Implementation (`vantage/services/webhook_notifier.py`)**:
+  * Re-resolves target hostnames to IP addresses immediately before socket connection, rejecting loopback, RFC1918 private IPs, or cloud metadata IPs.
+  * Disables HTTP redirects (`follow_redirects=False`) and signs dispatches with HMAC SHA-256 signatures (`X-Vantage-Signature`).
+
 
 
