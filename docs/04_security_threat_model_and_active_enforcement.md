@@ -85,83 +85,72 @@ The `ExecutionController` (`vantage/security/execution_controller.py`) is the so
 
 ---
 
-## 3. In-Flight PII & Secret Redaction Engine
+## 3. In-Flight PII & Secret Redaction Engine (`PIIMasker`)
 
-The `PIIMasker` (`vantage/security/pii_masker.py`) inspects and scrubs incoming telemetry streams prior to memory buffering or DuckDB storage.
+### 💡 Why We Use It
+When users interact with an AI agent (e.g. asking a customer support bot for help), their text prompts often contain sensitive personal information: credit card numbers, Social Security Numbers (SSNs), passwords, email addresses, or API keys.
+If Vantage stored raw prompt data in telemetry databases without redacting it, companies would violate data privacy regulations like **GDPR**, **HIPAA**, and **PCI-DSS**.
+
+### ⚙️ How It Works & Implementation (`vantage/security/pii_masker.py`)
+`PIIMasker` acts like an **automatic black marker** sitting inside the ingestion conveyor belt:
+
+1. **Before Saving to Storage**: Every span string (prompt text, tool argument, completion output) is sent through `pii_masker.mask(...)` *before* hitting DuckDB or SQLite.
+2. **Regex Pattern Scanners**: Matches standard formats for SSNs (`000-00-0000`), API keys (`sk-...`, `ghp_...`), Bearer tokens (`Bearer eyJ...`), and email addresses.
+3. **Luhn Checksum Verification (Credit Cards)**:
+   - Random 16-digit IDs (like an order number `1000-2000-3000-4000`) look like credit cards.
+   - To avoid falsely redacting order numbers, `PIIMasker` runs the **Luhn Algorithm** (a mathematical checksum used by Visa/Mastercard).
+   - If the Luhn check passes, it's a real credit card and gets replaced with `[REDACTED_CREDIT_CARD]`. If it fails, the order number is left intact!
 
 ```python
-# In-Flight Scrubbing Example
-raw_input = "User requested refund for card 4532-0151-1234-5678, SSN 000-12-3456"
-scrubbed_input = pii_masker.mask(raw_input)
-# Result: "User requested refund for card [REDACTED_CREDIT_CARD], SSN [REDACTED_SSN]"
-```
+# Example Input:
+"Please refund card 4532-0151-1234-5678, SSN 000-12-3456"
 
-### Supported Masking Rule Specifications
-- **Credit Card Numbers**: Matches 13 to 19 digit sequences and verifies valid Luhn algorithm checksum before redaction, eliminating false positives from random 16-digit IDs.
-- **Social Security Numbers (SSN)**: Scans for 9-digit US SSN patterns (`XXX-XX-XXXX`).
-- **Secret Keys & Bearer Tokens**: Detects OpenAI keys (`sk-...`), Vantage live keys (`vg_live_...`), GitHub tokens (`ghp_...`), and HTTP Auth headers (`Bearer eyJ...`).
-- **Email Addresses**: Detects standard email formats (`user@domain.com`).
-- **Telemetry Metadata Preservation**: The raw secret is never stored. Non-sensitive tags (`pii_scrubbed=true`, `pii_types=["credit_card", "ssn"]`) are attached to span attributes for auditing.
+# Scrubbed Output saved to Database:
+"Please refund card [REDACTED_CREDIT_CARD], SSN [REDACTED_SSN]"
+```
 
 ---
 
 ## 4. Threat Detection Engines
 
-### 1. `JailbreakDetector` (`vantage/security/jailbreak_detector.py`)
-Analyzes raw prompt text and RAG context using multi-pattern regex matching, unicode normalization (`TextNormalizer`), and base64/hex payload decoding (`PayloadDecoder`).
-- **Instruction Overrides**: Detects phrases like `"ignore previous instructions"`, `"system override"`, or `"disregard safety guidelines"`.
-- **Roleplay Bypasses**: Detects DAN (Do Anything Now) prompts, developer mode exploits, and persona impersonation.
-- **Encoded Payload Decoders**: Automatically decodes base64 strings and hex encodings to inspect hidden malicious payloads before evaluation.
+### 💡 Why We Use It
+AI models do not distinguish between instructions written by developers vs. instructions typed by malicious users. A hacker can trick an AI agent into doing bad things (like deleting data or emailing private customer lists to an external site).
 
-### 2. Data Exfiltration & Destination Trust Engine (`vantage/security/output_inspector.py`)
-Classifies payload sensitivity into 5 formal tiers and destinations into 4 trust levels:
+### ⚙️ How It Works & Implementation
 
-```text
-Data Sensitivity Tiers:
-  PUBLIC < INTERNAL < CONFIDENTIAL < SENSITIVE < RESTRICTED
+#### 1. `JailbreakDetector` (`vantage/security/jailbreak_detector.py`)
+Scans user prompts and RAG context to detect prompt injection attacks:
+* **Obfuscation Removal**: First, `TextNormalizer` and `PayloadDecoder` decode base64 strings or hex tricks that hackers use to hide malicious text.
+* **Pattern Scanner**: Checks for jailbreak signatures like `"ignore previous instructions"`, `"DAN mode"`, `"disregard safety guidelines"`, or `"system override"`.
+* **Action**: If a jailbreak attempt is detected, `JailbreakDetector` flags the prompt, raising a high threat signal to the policy gate.
 
-Destination Trust Categories:
-  TRUSTED_INTERNAL: Internal services (e.g. localhost, api.company.com)
-  APPROVED_EXTERNAL: Project-allowlisted third-party APIs (e.g. analytics.company.com)
-  UNKNOWN_EXTERNAL: Unrecognized external domain endpoints
-  BLOCKED: Known malicious or explicitly blacklisted hostnames
-
-Policy Enforcement Rule:
-  (SENSITIVE or RESTRICTED payload) + (UNKNOWN_EXTERNAL or BLOCKED destination) ==> BLOCK
-```
+#### 2. Data Exfiltration & Destination Trust Guard (`vantage/security/output_inspector.py`)
+Prevents sensitive company data from being sent to untrusted external URLs:
+* **Sensitivity Classification**: Ranks data into 5 tiers: `PUBLIC` < `INTERNAL` < `CONFIDENTIAL` < `SENSITIVE` < `RESTRICTED`.
+* **Destination Trust Rating**: Categorizes destination URLs into 4 levels: `TRUSTED_INTERNAL`, `APPROVED_EXTERNAL`, `UNKNOWN_EXTERNAL`, or `BLOCKED`.
+* **Enforcement Rule**: If an agent tries to send `RESTRICTED` or `SENSITIVE` data to an `UNKNOWN_EXTERNAL` or `BLOCKED` URL, execution is **BLOCKED** immediately (`reason_code = "DATA_EXFILTRATION_PREVENTED"`).
 
 ---
 
 ## 5. Human-in-the-Loop & Audit Governance
 
-### TOCTOU Action Fingerprinting & Single-Use Approvals
-To prevent Time-Of-Check-To-Time-Of-Use (TOCTOU) argument tampering and approval replay attacks, `HumanApprovalWorkflow` generates a SHA-256 fingerprint:
+### 💡 Why We Use It
+High-risk AI actions (like sending a \$10,000 wire transfer or running a raw SQL `DELETE` query) should never happen automatically. They require a human manager's explicit approval.
+However, two major security threats exist here:
+1. **TOCTOU Attack (Time-Of-Check-To-Time-Of-Use)**: A manager approves paying \$100. But right before execution, the AI swaps the argument to \$10,000.
+2. **Audit Tampering**: A hacker compromises the database and deletes audit logs showing their malicious actions.
 
-`approval_fingerprint = SHA256(canonical_json({tool, action, resource, environment, arguments}, sort_keys=True))`
+### ⚙️ How It Works & Implementation
 
-- **Single-Use Semantics**: When `ExecutionController` processes an approved request, `consume_approval()` checks `consumed_at is None` and atomically sets `consumed_at = time.time()`. Subsequent attempts using the same approval ID are blocked (`APPROVAL_ALREADY_CONSUMED`).
-- **Stale Policy Protection**: Verifies `approved_policy_version == current_policy_version`. If an admin updates the security policy from `v1.2.0` to `v1.3.0` while an approval is pending, execution returns `BLOCK` with `reason_code = "APPROVAL_POLICY_STALE"`.
+#### 1. Single-Use TOCTOU Action Fingerprinting (`vantage/security/approval_workflow.py`)
+To prevent argument tampering:
+* **SHA-256 Fingerprint**: When a human approval is requested, Vantage creates a cryptographic fingerprint of the *exact* request parameters:
+  `approval_fingerprint = SHA256({tool, action, resource, environment, arguments})`
+* **Single-Use Consumption**: When `ExecutionController` runs the approved tool, it verifies the hash matches the approved request AND atomically marks `consumed_at = timestamp`. If the approval is used again or arguments are changed, execution is blocked (`APPROVAL_ALREADY_CONSUMED`).
 
-### Role-Based Access Control (RBAC)
-Vantage enforces 3 strict role permission levels:
+#### 2. Cryptographic Hash-Chained Audit Trail (`vantage/storage/sqlalchemy/models.py`)
+Every administrative action (policy change, approval, security block) is logged using a **SHA-256 cryptographic chain**:
+`record_hash[i] = SHA256(actor + action + details + record_hash[i-1])`
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  ROLE CAPABILITY MATRIX                                  │
-├───────────────────┬──────────────────────────────────────────────────────────────────────┤
-│ Role              │ Granted System Capabilities                                          │
-├───────────────────┼──────────────────────────────────────────────────────────────────────┤
-│ Viewer            │ Read metrics, view execution DAG traces, inspect project metadata.   │
-├───────────────────┼──────────────────────────────────────────────────────────────────────┤
-│ Developer         │ Ingest telemetry, run offline replays, evaluate What-If forks.       │
-├───────────────────┼──────────────────────────────────────────────────────────────────────┤
-│ Admin             │ Full access: Create/revoke API keys, modify policies, inspect audit. │
-└───────────────────┴──────────────────────────────────────────────────────────────────────┘
-```
+> 💡 **Simple Analogy**: Think of it like a chain of physical locks where key $N$ depends on lock $N-1$. If an attacker alters row #5 in SQLite, lock #5 breaks, causing locks #6, #7, #8, and every future lock to fail validation. Calling `GET /api/v1/audit/logs` instantly flags `chain_valid = false`.
 
-### Cryptographic Tamper-Evident Audit Logging
-All administrative security actions (API key creation, policy changes, human approvals, security blocks) write an entry to `audit_logs` using a cryptographic SHA-256 hash chain:
-
-`record_hash[i] = SHA256(actor_key_id + action + resource_type + details_json + record_hash[i-1])`
-
-If an attacker modifies or deletes a historical audit entry in the database, verifying the hash chain via `GET /api/v1/audit/logs` immediately flags `chain_valid = false` and highlights the exact index where tampering occurred.

@@ -1,6 +1,52 @@
 # Vantage: Project Vision, Use Cases, & Requirements (Simple Guide)
 
-Welcome to **Vantage**! This document explains what Vantage is, why traditional monitoring tools fail when AI is introduced, how Vantage protects AI applications, and the real-world problems Vantage solves.
+Welcome to **Vantage**! This document explains **why we created Vantage**, what exact problems it solves, why traditional monitoring tools fail when AI is introduced, and how Vantage protects AI applications in production.
+
+---
+
+## 💡 Why We Created Vantage: The Origin Story & Exact Problems Solved
+
+### The Origin Story
+For the past 40 years, software was built using **fixed, deterministic code** written by human programmers. If a user clicked "Pay Now", the software followed an exact, pre-written script to process the payment.
+
+Today, software is undergoing a massive shift to **autonomous AI Agents** powered by Large Language Models (LLMs like GPT-4o, Claude 3.5, Gemini 2.0). An AI Agent acts like a digital employee: it reads user text, makes its own decisions, constructs multi-step execution plans, and calls real external tools (executing SQL queries, calling payment APIs, writing files, sending emails).
+
+While AI Agents are powerful, they introduce **massive operational and security risks**. We built Vantage to give engineering and security teams a unified platform to **observe, budget, authorize, and actively secure** AI agents in production.
+
+---
+
+### The 5 Core Problems Vantage Solves
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                      THE 5 CORE PROBLEMS VANTAGE SOLVES                                  │
+├──────────────────────────┬─────────────────────────────────┬─────────────────────────────┤
+│ The Real-World Problem   │ Why Existing Tools Fail         │ How Vantage Solves It       │
+├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
+│ 1. The "Black Box"       │ Traditional tools (Datadog)     │ Ingests OTLP spans into     │
+│    Observability Problem │ only see simple HTTP endpoints. │ DuckDB, giving full DAG     │
+│                          │ They cannot see LLM prompts,    │ visibility, step counts, &  │
+│                          │ token costs, or tool choices.   │ exact model costs.          │
+├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
+│ 2. The "Too Late"        │ Legacy monitoring logs errors   │ Inline ExecutionController  │
+│    Security Problem      │ AFTER damage occurs (e.g. after │ intercepts tool calls and   │
+│                          │ a DB is deleted by a prompt     │ BLOCKS dangerous actions    │
+│                          │ injection).                     │ BEFORE execution.           │
+├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
+│ 3. The PII & Secrets     │ AI prompts contain credit cards,│ In-flight PIIMasker scrubs  │
+│    Data Leak Problem     │ SSNs, and passwords, risking    │ credit cards (Luhn valid)   │
+│                          │ privacy compliance fines.       │ & secrets BEFORE telemetry  │
+│                          │                                 │ is saved to storage.        │
+├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
+│ 4. Runaway Loops &       │ An AI agent stuck in a retry    │ TraceActionCircuitBreaker   │
+│    Cost Spike Problem    │ loop can burn thousands of      │ enforces action budgets and │
+│                          │ dollars in tokens per minute.   │ halts runaway loops.        │
+├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
+│ 5. The "Impossible Bug"  │ Because LLM outputs change on   │ ReplayEngine reconstructs   │
+│    Debugging Problem     │ every run, reproducing a bug    │ execution state & mocks     │
+│                          │ offline is nearly impossible.   │ tools for offline replays.  │
+└──────────────────────────┴─────────────────────────────────┴─────────────────────────────┘
+```
 
 ---
 
@@ -214,7 +260,7 @@ Standard APM tools track basic metrics like:
 ├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
 │ 3. Database Bottlenecks  │ Heavy DB writes locked web      │ Built a bounded ring buffer │
 │    Under Traffic Spikes  │ worker threads during high      │ with async background batch │
-│                          │ 10,000 req/sec telemetry load.  │ flushes & Dead-Letter Queue.│
+│                          │ 10,000 req/sec telemetry load.  │ flusher & Dead-Letter Queue.│
 ├──────────────────────────┼─────────────────────────────────┼─────────────────────────────┤
 │ 4. Single-Score Security │ Security relied on a single     │ Designed Multi-Signal Policy│
 │    Flaws                 │ threat score that prompt        │ Engine with hard precedence:│
